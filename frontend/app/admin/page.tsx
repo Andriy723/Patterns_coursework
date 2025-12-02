@@ -7,14 +7,19 @@ export default function AdminDashboardPage() {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const email = typeof window !== 'undefined' ? localStorage.getItem('adminEmail') : null;
 
     useEffect(() => {
+        const role = localStorage.getItem('adminRole');
+        setIsSuperAdmin(role === 'SUPER_ADMIN');
         fetchStats();
     }, []);
 
     const fetchStats = async () => {
         try {
+            setLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 700));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -151,28 +156,32 @@ export default function AdminDashboardPage() {
                     }}>
                         🚚 Manage Suppliers
                     </a>
-                    <a href="/admin/reports" style={{
-                        padding: '12px',
-                        backgroundColor: '#f59e0b',
-                        color: 'white',
-                        textDecoration: 'none',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        fontWeight: '600',
-                    }}>
-                        📈 View Reports
-                    </a>
-                    <a href="/admin/admins" style={{
-                        padding: '12px',
-                        backgroundColor: '#8b5cf6',
-                        color: 'white',
-                        textDecoration: 'none',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        fontWeight: '600',
-                    }}>
-                        👥 Manage Admins
-                    </a>
+                    {isSuperAdmin && (
+                        <>
+                            <a href="/admin/reports" style={{
+                                padding: '12px',
+                                backgroundColor: '#f59e0b',
+                                color: 'white',
+                                textDecoration: 'none',
+                                borderRadius: '8px',
+                                textAlign: 'center',
+                                fontWeight: '600',
+                            }}>
+                                📈 View Reports
+                            </a>
+                            <a href="/admin/admins" style={{
+                                padding: '12px',
+                                backgroundColor: '#8b5cf6',
+                                color: 'white',
+                                textDecoration: 'none',
+                                borderRadius: '8px',
+                                textAlign: 'center',
+                                fontWeight: '600',
+                            }}>
+                                👥 Manage Admins
+                            </a>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

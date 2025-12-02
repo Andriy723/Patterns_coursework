@@ -96,6 +96,36 @@ async function createTables(): Promise<void> {
                 )
         `);
 
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS users (
+                id VARCHAR(36) PRIMARY KEY,
+                email VARCHAR(255) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                role ENUM('USER') DEFAULT 'USER',
+                isActive BOOLEAN DEFAULT TRUE,
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Створення дефолтного користувача
+        const defaultUserEmail = process.env.DEFAULT_USER_EMAIL || 'user1@warehouse.local';
+        const defaultUserPassword = process.env.DEFAULT_USER_PASSWORD || 'User123!';
+
+        const [existingUser] = await connection.execute(
+            'SELECT id FROM users WHERE email = ?',
+            [defaultUserEmail]
+        );
+        if ((existingUser as any[]).length === 0) {
+            const hashed = await bcrypt.hash(defaultUserPassword, 10);
+            await connection.execute(
+                'INSERT INTO users (id, email, password, name, role, isActive) VALUES (?, ?, ?, ?, ?, ?)',
+                ['user-001', defaultUserEmail, hashed, 'User One', 'USER', true]
+            );
+            console.log(`✅ Default USER created: ${defaultUserEmail}`);
+        }
+
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@warehouse.local';
         const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'Admin123!';
 

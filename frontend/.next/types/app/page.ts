@@ -1,4 +1,4 @@
-// File: C:\Users\plish\WebstormProjects\Cursova_Patterns\cursova_patterns\frontend\app\page.tsx
+// File: C:\Users\plish\WebstormProjects\Cursova_Patterns\Patterns_coursework\frontend\app\page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

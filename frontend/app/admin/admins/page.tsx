@@ -23,16 +23,14 @@ export default function AdminsPage() {
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
-        if (role !== 'SUPER_ADMIN') {
-            router.push('/admin');
-            return;
-        }
-        setIsSuperAdmin(true);
+        setIsSuperAdmin(role === 'SUPER_ADMIN');
         fetchAdmins();
     }, [router]);
 
     const fetchAdmins = async () => {
         try {
+            setLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 600));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -103,37 +101,19 @@ export default function AdminsPage() {
     return (
         <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>
-                    👥 Admin Management
-                </h1>
+                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>👥 Admin Management</h1>
+                {isSuperAdmin && (
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    style={{
-                        padding: '12px 20px',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                    }}
+                    style={{ padding: '12px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}
                 >
                     {showForm ? '✕ Cancel' : '➕ Create Admin'}
                 </button>
+                )}
             </div>
-
-            {showForm && (
-                <form onSubmit={handleCreateAdmin} style={{
-                    display: 'grid',
-                    gap: '16px',
-                    maxWidth: '400px',
-                    padding: '24px',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '12px',
-                    border: '1px solid #e5e7eb',
-                    marginBottom: '30px',
-                }}>
+            {!isSuperAdmin && (<div style={{margin:'0 0 24px 0',background:'#e0f2fe',border:'1px solid #bae6fd',borderRadius:'8px',color:'#0369a1',fontSize:'13px',padding:12}}>Перегляд списку адміністраторів лише для читання. CRUD дозволено тільки Super Admin</div>)}
+            {isSuperAdmin && showForm && (
+                <form onSubmit={handleCreateAdmin} style={{ display: 'grid', gap: '16px', maxWidth: '400px', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '30px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
                             Email
@@ -254,7 +234,7 @@ export default function AdminsPage() {
                                     {new Date(admin.createdAt).toLocaleDateString()}
                                 </td>
                                 <td style={{ padding: '16px', textAlign: 'center' }}>
-                                    {admin.isActive && admin.role !== 'SUPER_ADMIN' && (
+                                    {isSuperAdmin && admin.isActive && admin.role !== 'SUPER_ADMIN' && (
                                         <button
                                             onClick={() => handleDeleteAdmin(admin.id, admin.role)}
                                             style={{

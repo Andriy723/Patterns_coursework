@@ -27,6 +27,8 @@ export default function SuppliersPage() {
 
     const fetchSuppliers = async () => {
         try {
+            setLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 600));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -70,9 +72,7 @@ export default function SuppliersPage() {
     return (
         <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>
-                    🚚 Suppliers
-                </h1>
+                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>🚚 Suppliers</h1>
                 {isSuperAdmin && (
                     <button
                         onClick={() => setShowForm(!showForm)}
@@ -91,7 +91,7 @@ export default function SuppliersPage() {
                     </button>
                 )}
             </div>
-
+            {!isSuperAdmin && (<div style={{margin:'0 0 24px 0',background:'#e0f2fe',border:'1px solid #bae6fd',borderRadius:'8px',color:'#0369a1',fontSize:'13px',padding:12}}>Сторінка тільки для перегляду. CRUD постачальників дозволено лише Super Admin</div>)}
             {isSuperAdmin && showForm && (
                 <form onSubmit={handleCreateSupplier} style={{
                     display: 'grid',

@@ -54,3 +54,14 @@ export interface NotificationObserver {
 export interface MovementStrategy {
     process(productId: string, quantity: number): Promise<void>;
 }
+
+export interface User {
+    id: string;
+    email: string;
+    password: string;
+    name: string;
+    role: 'USER';
+    createdAt: Date;
+    updatedAt: Date;
+    isActive: boolean;
+}

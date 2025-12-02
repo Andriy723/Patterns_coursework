@@ -1,140 +1,73 @@
+// !! Ця сторінка призначена виключно для ролі USER. Для ролей ADMIN, SUPER_ADMIN використовуйте admin/products/page.tsx. Для неавторизованого доступу — public-simple API.
 'use client';
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
-interface Product {
+interface PublicProduct {
     id: string;
     name: string;
     article: string;
     quantity: number;
-    price: number;
     minStock: number;
 }
 
-export default function AdminProductsPage() {
-    const [products, setProducts] = useState<Product[]>([]);
+export default function UserProductsPage() {
+    const [products, setProducts] = useState<PublicProduct[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [error, setError] = useState('');
+    const router = useRouter();
 
     useEffect(() => {
-        const role = localStorage.getItem('adminRole');
-        setIsSuperAdmin(role === 'SUPER_ADMIN');
+        const token = localStorage.getItem('userToken');
+        if (!token) {
+            router.replace('/user/login');
+            return;
+        }
         fetchProducts();
     }, []);
 
     const fetchProducts = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-
-            const response = await axios.get(`${baseUrl}/products`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            setProducts(response.data);
-        } catch (error) {
-            console.error('Error fetching products:', error);
+            const resp = await axios.get(`${baseUrl}/products/public-simple`);
+            setProducts(resp.data);
+        } catch (err) {
+            setError('Не вдалось завантажити список товарів');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>
-                    📋 Products
-                </h1>
-                {isSuperAdmin && (
-                    <a href="/admin/products/create" style={{
-                        padding: '12px 20px',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        textDecoration: 'none',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                    }}>
-                        ➕ Add Product
-                    </a>
-                )}
+        <div style={{ maxWidth: 900, margin: '40px auto', background: '#fff', borderRadius: 12, boxShadow: '0 1px 3px #d3d6db', padding: 24 }}>
+            <div style={{textAlign:'right', marginBottom:12}}>
+                <button onClick={() => { localStorage.removeItem('userToken'); window.location.href = '/user/login'; }} style={{background:'#e5e7eb',border:'none',padding:'8px 18px',borderRadius:6,cursor:'pointer',fontWeight:600}}>Вийти</button>
             </div>
-
-            {loading ? (
-                <div style={{ padding: '60px 40px', textAlign: 'center', backgroundColor: '#f9fafb', borderRadius: '12px' }}>
-                    <p style={{ fontSize: '18px', color: '#6b7280' }}>⏳ Loading...</p>
-                </div>
-            ) : (
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{
-                        width: '100%',
-                        borderCollapse: 'collapse',
-                        backgroundColor: '#ffffff',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                    }}>
-                        <thead style={{ backgroundColor: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
-                        <tr>
-                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Name</th>
-                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Article</th>
-                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Qty</th>
-                            <th style={{ padding: '16px', textAlign: 'right', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Price</th>
-                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Min Stock</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {products.map((product) => (
-                            <tr key={product.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                <td style={{ padding: '16px', fontSize: '14px', color: '#111827' }}>{product.name}</td>
-                                <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>{product.article}</td>
-                                <td style={{
-                                    padding: '16px',
-                                    textAlign: 'center',
-                                    fontSize: '14px',
-                                    color: product.quantity <= product.minStock ? '#dc2626' : '#111827',
-                                    fontWeight: product.quantity <= product.minStock ? '700' : 'normal',
-                                }}>
-                                    {product.quantity}
-                                </td>
-                                <td style={{ padding: '16px', textAlign: 'right', fontSize: '14px', color: '#111827' }}>
-                                    ${Number(product.price).toFixed(2)}
-                                </td>
-                                <td style={{ padding: '16px', textAlign: 'center', fontSize: '14px', color: '#111827' }}>
-                                    {product.minStock}
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                    {products.length === 0 && (
-                        <div style={{
-                            padding: '40px',
-                            textAlign: 'center',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '12px',
-                            color: '#6b7280',
-                        }}>
-                            No products available
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {!isSuperAdmin && (
-                <div style={{
-                    marginTop: '20px',
-                    padding: '12px',
-                    backgroundColor: '#e0f2fe',
-                    border: '1px solid #bae6fd',
-                    borderRadius: '8px',
-                    color: '#0369a1',
-                    fontSize: '13px',
-                }}>
-                    ℹ️ Only Super Admins can add or edit products
-                </div>
-            )}
+            <h1 style={{ marginBottom: 20, fontSize: 26, fontWeight: 700 }}>📋 Склад: Cписок товарів</h1>
+            <p style={{color:'#64748b',margin:'10px 0 15px 0'}}>Тут відображаються всі товари на складі (без цін). Ви увійшли як користувач.<br/>Якщо вам потрібен доступ до адміністративних функцій — натисніть "Адмін вхід" у верхньому рядку.</p>
+            {loading && <div>Завантаження...</div>}
+            {error && <div style={{color:'#b91c1c', margin:'12px 0'}}>{error}</div>}
+            <table style={{ width: '100%', borderCollapse:'collapse', background: '#f9fafb' }}>
+                <thead><tr>
+                    <th style={{padding:12, textAlign:'left'}}>Назва</th>
+                    <th style={{padding:12, textAlign:'left'}}>Артикул</th>
+                    <th style={{padding:12, textAlign:'center'}}>Залишок</th>
+                    <th style={{padding:12, textAlign:'center'}}>Мінімум</th>
+                </tr></thead>
+                <tbody>
+                {products.map((p) => (
+                    <tr key={p.id} style={{borderBottom:'1px solid #e4e7ed'}}>
+                        <td style={{padding:10}}>{p.name}</td>
+                        <td style={{padding:10}}>{p.article}</td>
+                        <td style={{padding:10, textAlign:'center'}}>{p.quantity}</td>
+                        <td style={{padding:10, textAlign:'center'}}>{p.minStock}</td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+            {products.length === 0 && !loading && <div style={{marginTop: 22}}>Товарів немає</div>}
         </div>
     );
 }

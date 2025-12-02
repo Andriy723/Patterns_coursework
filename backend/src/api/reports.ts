@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { ReportContext, WarehouseStatusReportStrategy, MovementDynamicsReportStrategy, FinancialReportStrategy } from '../patterns/strategy';
+import { authMiddleware, adminOnly } from './auth';
 
 const router = Router();
 
-router.get('/status', async (req: Request, res: Response) => {
+router.get('/status', authMiddleware, adminOnly, async (req: Request, res: Response) => {
     try {
         const date = req.query.date ? new Date(req.query.date as string) : new Date();
 
@@ -17,7 +18,7 @@ router.get('/status', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/dynamics', async (req: Request, res: Response) => {
+router.get('/dynamics', authMiddleware, adminOnly, async (req: Request, res: Response) => {
     try {
         const date = req.query.date ? new Date(req.query.date as string) : new Date();
 
@@ -31,7 +32,7 @@ router.get('/dynamics', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/financial', async (req: Request, res: Response) => {
+router.get('/financial', authMiddleware, adminOnly, async (req: Request, res: Response) => {
     try {
         const date = req.query.date ? new Date(req.query.date as string) : new Date();
 
