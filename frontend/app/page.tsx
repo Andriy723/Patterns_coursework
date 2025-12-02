@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { Navigation } from '@/components/Navigation';
 import type { WarehouseStatus } from '@/types';
@@ -9,10 +10,27 @@ export default function HomePage() {
     const [status, setStatus] = useState<WarehouseStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [apiUrl, setApiUrl] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        const checkAuth = () => {
+            const userToken = localStorage.getItem('userToken');
+            const adminToken = localStorage.getItem('adminToken');
+            if (!userToken && !adminToken) {
+                setIsAuthenticated(false);
+                router.replace('/user/login');
+                return;
+            }
+            setIsAuthenticated(true);
+        };
+        checkAuth();
+    }, []);
 
     const fetchStatus = async () => {
         try {
             setLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 800));
             const data = await apiClient.getWarehouseStatus();
             setStatus(data);
         } catch (error) {
@@ -24,8 +42,18 @@ export default function HomePage() {
     };
 
     useEffect(() => {
-        fetchStatus();
-    }, [apiUrl]);
+        if (isAuthenticated) {
+            fetchStatus();
+        }
+    }, [apiUrl, isAuthenticated]);
+
+    if (!isAuthenticated) {
+        return (
+            <div style={{ padding: '40px', textAlign: 'center', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ fontSize: '18px', color: '#6b7280' }}>⏳ Перевірка авторизації...</p>
+            </div>
+        );
+    }
 
     return (
         <>

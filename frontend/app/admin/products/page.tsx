@@ -2,28 +2,60 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api';
-import type { Product } from '@/types';
+import type { Product, Supplier } from '@/types';
 import { Modal } from '@/components/Modal';
 import Link from 'next/link';
 import { AdminNav } from '@/components/AdminNav';
+import axios from 'axios';
+
+interface ProductWithSupplier extends Product {
+    supplierName?: string;
+}
 
 export default function AdminProductsPage() {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<ProductWithSupplier[]>([]);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
     const [modalType, setModalType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     useEffect(() => {
-        fetchProducts();
+        const role = localStorage.getItem('adminRole');
+        setIsSuperAdmin(role === 'SUPER_ADMIN');
+        fetchData();
     }, []);
 
-    const fetchProducts = async () => {
+    const fetchData = async () => {
         try {
             setLoading(true);
-            const data = await apiClient.getProducts();
-            setProducts(data);
+            // Додаємо затримку для плавного завантаження
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const token = localStorage.getItem('adminToken');
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+            
+            const [productsRes, suppliersRes] = await Promise.all([
+                axios.get(`${baseUrl}/products`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${baseUrl}/suppliers`, { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+            
+            const productsData = productsRes.data || [];
+            const suppliersData = suppliersRes.data || [];
+            
+            // Додаємо назву постачальника до кожного продукту
+            const productsWithSuppliers = productsData.map((product: Product) => {
+                const supplier = suppliersData.find((s: Supplier) => s.id === product.supplierId);
+                return {
+                    ...product,
+                    supplierName: supplier?.name || 'N/A'
+                };
+            });
+            
+            setProducts(productsWithSuppliers);
+            setSuppliers(suppliersData);
         } catch (error) {
             console.error('Error:', error);
             setModalMessage('Помилка при завантаженні товарів');
@@ -41,8 +73,8 @@ export default function AdminProductsPage() {
 
         setDeleting(id);
         try {
-            await apiClient.deleteProduct(id);
-            await fetchProducts();
+                            await apiClient.deleteProduct(id);
+            await fetchData();
             setModalMessage(`Товар "${name}" успішно видалено`);
             setModalType('success');
             setShowModal(true);
@@ -78,30 +110,32 @@ export default function AdminProductsPage() {
                     <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>
                         📋 Управління товарами
                     </h1>
-                    <Link
-                        href="/products/create"
-                        style={{
-                            padding: '12px 20px',
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            textDecoration: 'none',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            transition: 'all 0.2s',
-                            display: 'inline-block',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#2563eb';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#3b82f6';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                        }}
-                    >
-                        ➕ Додати новий товар
-                    </Link>
+                    {isSuperAdmin && (
+                        <Link
+                            href="/admin/products/create"
+                            style={{
+                                padding: '12px 20px',
+                                backgroundColor: '#3b82f6',
+                                color: 'white',
+                                textDecoration: 'none',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                transition: 'all 0.2s',
+                                display: 'inline-block',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#2563eb';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#3b82f6';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            ➕ Додати новий товар
+                        </Link>
+                    )}
                 </div>
 
                 {loading ? (
@@ -178,6 +212,17 @@ export default function AdminProductsPage() {
                                     }}
                                 >
                                     Ціна
+                                </th>
+                                <th
+                                    style={{
+                                        padding: '16px',
+                                        textAlign: 'left',
+                                        fontWeight: '700',
+                                        color: '#111827',
+                                        fontSize: '14px',
+                                    }}
+                                >
+                                    Постачальник
                                 </th>
                                 <th
                                     style={{
@@ -260,6 +305,15 @@ export default function AdminProductsPage() {
                                     <td
                                         style={{
                                             padding: '16px',
+                                            fontSize: '14px',
+                                            color: '#111827',
+                                        }}
+                                    >
+                                        {product.supplierName || 'N/A'}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: '16px',
                                             textAlign: 'center',
                                             display: 'flex',
                                             gap: '8px',
@@ -267,7 +321,7 @@ export default function AdminProductsPage() {
                                         }}
                                     >
                                         <Link
-                                            href={`/products/${product.id}`}
+                                            href={`/admin/products/${product.id}`}
                                             style={{
                                                 padding: '6px 12px',
                                                 backgroundColor: '#e0e7ff',

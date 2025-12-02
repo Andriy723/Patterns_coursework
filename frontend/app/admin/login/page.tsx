@@ -39,9 +39,11 @@ export default function AdminLoginPage() {
                 { timeout: 10000 }
             );
 
+            console.log('[LOGIN] Response data:', response.data);
             localStorage.setItem('adminToken', response.data.token);
             localStorage.setItem('adminEmail', response.data.email);
-            localStorage.setItem('adminRole', response.data.role);
+            localStorage.setItem('adminRole', response.data.role || 'ADMIN');
+            console.log('[LOGIN] Saved role:', response.data.role || 'ADMIN');
             router.push('/admin');
         } catch (err: any) {
             console.error('Login error:', err);

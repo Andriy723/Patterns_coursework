@@ -65,6 +65,13 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                             }}>
                                 👥 Admins
                             </Link>
+                            <Link href="/admin/users" style={{
+                                textDecoration: 'none',
+                                color: '#d1d5db',
+                                fontSize: '14px',
+                            }}>
+                                👤 Users
+                            </Link>
                             <Link href="/admin/reports" style={{
                                 textDecoration: 'none',
                                 color: '#d1d5db',
@@ -151,29 +158,48 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('adminToken');
-            const storedRole = localStorage.getItem('adminRole');
-
+            let storedRole = localStorage.getItem('adminRole');
+            
+            console.log('[DEBUG role-check]', {storedRole, pathname: window.location.pathname, token: token ? 'exists' : 'missing'});
+            
             if (!token) {
                 setIsAuthenticated(false);
-                if (pathname !== '/admin/login') {
-                    router.replace('/admin/login');
-                }
-            } else {
-                setIsAuthenticated(true);
-                setRole(storedRole || 'ADMIN');
+                if (pathname !== '/admin/login') router.replace('/admin/login');
+                setIsCheckingAuth(false);
+                return;
+            }
 
-                if (pathname === '/admin/login') {
-                    router.replace('/admin');
-                }
-
-                if (storedRole !== 'SUPER_ADMIN' && (pathname.includes('/admin/admins') || pathname.includes('/admin/reports'))) {
-                    router.replace('/admin');
+            // Якщо роль відсутня або undefined, отримуємо її з API
+            if (!storedRole || storedRole === 'undefined' || storedRole === 'null') {
+                try {
+                    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+                    const response = await fetch(`${baseUrl}/auth/me`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        const newRole = data.role || 'ADMIN';
+                        storedRole = newRole;
+                        localStorage.setItem('adminRole', newRole);
+                        console.log('[DEBUG] Fetched role from API:', newRole);
+                    }
+                } catch (error) {
+                    console.error('[DEBUG] Error fetching role:', error);
                 }
             }
 
+            setIsAuthenticated(true);
+            const finalRole = storedRole || 'ADMIN';
+            setRole(finalRole);
+            
+            if (pathname === '/admin/login') router.replace('/admin');
+            
+            if (finalRole !== 'SUPER_ADMIN' && (pathname.includes('/admin/admins') || pathname.includes('/admin/reports'))) {
+                router.replace('/admin');
+            }
+            
             setIsCheckingAuth(false);
         };
-
         checkAuth();
     }, [router, pathname]);
 
@@ -205,6 +231,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (pathname === '/admin/login') {
         return children;
+    }
+
+    if(!isAuthenticated && pathname.includes('/admin/admins') && typeof window!=='undefined') {
+        const role = localStorage.getItem('adminRole');
+        return <div style={{padding:36,background:'#e0f2fe',margin:40,border:'1px solid #bae6fd',borderRadius:10}}>
+          <strong>Увага!</strong><br/>
+          Лише SUPER_ADMIN має доступ до цієї сторінки.<br/>
+          Зараз ваша роль: <code>{role ? role : 'не вказано'}</code>
+        </div>;
     }
 
     return (

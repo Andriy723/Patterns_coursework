@@ -13,8 +13,11 @@ export class WarehouseStatusReportStrategy implements ReportStrategy {
             const dateStr = date.toISOString().split('T')[0];
 
             const [products] = await connection.execute(
-                `SELECT id, name, article, quantity, price, (quantity * price) as total_value
-                 FROM products`
+                `SELECT p.id, p.name, p.article, p.quantity, p.price, 
+                        (p.quantity * p.price) as total_value,
+                        s.name as supplierName, p.supplierId
+                 FROM products p
+                 LEFT JOIN suppliers s ON p.supplierId = s.id`
             );
 
             const [movements] = await connection.execute(
@@ -94,14 +97,16 @@ export class FinancialReportStrategy implements ReportStrategy {
         try {
             const [products] = await connection.execute(
                 `SELECT
-                     id,
-                     name,
-                     article,
-                     quantity,
-                     price,
-                     (quantity * price) as total_value,
-                     supplierId
-                 FROM products`
+                     p.id,
+                     p.name,
+                     p.article,
+                     p.quantity,
+                     p.price,
+                     (p.quantity * p.price) as total_value,
+                     p.supplierId,
+                     s.name as supplierName
+                 FROM products p
+                 LEFT JOIN suppliers s ON p.supplierId = s.id`
             );
 
             const productList = (products as any[]) || [];

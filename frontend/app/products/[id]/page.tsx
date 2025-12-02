@@ -19,12 +19,18 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     const router = useRouter();
 
     useEffect(() => {
+        const adminToken = localStorage.getItem('adminToken');
+        if (adminToken) {
+            router.replace(`/admin/products/${params.id}`);
+            return;
+        }
         fetchProduct();
     }, [params.id]);
 
     const fetchProduct = async () => {
         try {
             setLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 500));
             const data = await apiClient.getProduct(params.id);
             setProduct(data);
             setFormData(data);
