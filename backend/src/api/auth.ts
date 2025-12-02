@@ -1,0 +1,202 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import { getPool } from '../database';
+import { v4 as uuidv4 } from 'uuid';
+
+export interface AuthRequest extends Request {
+    adminId?: string;
+    email?: string;
+    role?: 'SUPER_ADMIN' | 'ADMIN' | 'USER';
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const TOKEN_EXPIRY = '7d';
+
+export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { adminId: string; email: string; role: string };
+        req.adminId = decoded.adminId;
+        req.email = decoded.email;
+        req.role = decoded.role as 'SUPER_ADMIN' | 'ADMIN' | 'USER';
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Invalid token' });
+    }
+};
+
+export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.role || (req.role !== 'ADMIN' && req.role !== 'SUPER_ADMIN')) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+};
+
+export const superAdminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (req.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Super Admin access required' });
+    }
+    next();
+};
+
+export const userOrAdminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.role) {
+        return res.status(403).json({ error: 'Access required' });
+    }
+    next();
+};
+
+const router = Router();
+
+router.post('/login', async (req: Request, res: Response) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password required' });
+        }
+
+        const pool = getPool();
+        const connection = await pool.getConnection();
+
+        try {
+            const [users] = await connection.execute(
+                'SELECT * FROM admin_users WHERE email = ? AND isActive = ?',
+                [email, true]
+            );
+
+            if ((users as any[]).length === 0) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            const user = (users as any[])[0];
+            const passwordMatch = await bcrypt.compare(password, user.password);
+
+            if (!passwordMatch) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            const token = jwt.sign(
+                { adminId: user.id, email: user.email, role: user.role },
+                JWT_SECRET,
+                { expiresIn: TOKEN_EXPIRY }
+            );
+
+            res.json({
+                token,
+                email: user.email,
+                role: user.role,
+                isSuperAdmin: user.role === 'SUPER_ADMIN'
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+router.post('/admins', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password required' });
+        }
+
+        const pool = getPool();
+        const connection = await pool.getConnection();
+
+        try {
+            const [existing] = await connection.execute(
+                'SELECT id FROM admin_users WHERE email = ?',
+                [email]
+            );
+
+            if ((existing as any[]).length > 0) {
+                return res.status(400).json({ error: 'Admin already exists' });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const adminId = uuidv4();
+
+            await connection.execute(
+                'INSERT INTO admin_users (id, email, password, role, isActive) VALUES (?, ?, ?, ?, ?)',
+                [adminId, email, hashedPassword, 'ADMIN', true]
+            );
+
+            res.status(201).json({ id: adminId, email, role: 'ADMIN' });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+router.get('/admins', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const pool = getPool();
+        const connection = await pool.getConnection();
+
+        try {
+            const [admins] = await connection.execute(
+                'SELECT id, email, role, isActive, createdAt FROM admin_users'
+            );
+
+            res.json(admins);
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+router.delete('/admins/:id', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const pool = getPool();
+        const connection = await pool.getConnection();
+
+        try {
+            const [user] = await connection.execute(
+                'SELECT role FROM admin_users WHERE id = ?',
+                [req.params.id]
+            );
+
+            if ((user as any[])[0]?.role === 'SUPER_ADMIN') {
+                return res.status(400).json({ error: 'Cannot delete Super Admin' });
+            }
+
+            await connection.execute(
+                'UPDATE admin_users SET isActive = ? WHERE id = ?',
+                [false, req.params.id]
+            );
+
+            res.json({ success: true });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+    res.json({
+        adminId: req.adminId,
+        email: req.email,
+        role: req.role,
+        isSuperAdmin: req.role === 'SUPER_ADMIN',
+        isAdmin: req.role === 'ADMIN',
+        isUser: req.role === 'USER'
+    });
+});
+
+export default router;

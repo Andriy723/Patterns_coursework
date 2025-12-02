@@ -1,0 +1,60 @@
+import { Router, Request, Response } from 'express';
+import { WarehouseService } from '../services/warehouseService';
+
+const router = Router();
+const warehouseService = new WarehouseService();
+
+router.post('/movement', async (req: Request, res: Response) => {
+    try {
+        const { productId, type, quantity, documentNumber } = req.body;
+
+        if (!productId || !type || quantity === undefined || !documentNumber) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        if (!['INCOME', 'OUTCOME', 'WRITE_OFF'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid movement type' });
+        }
+
+        if (quantity <= 0) {
+            return res.status(400).json({ error: 'Quantity must be greater than 0' });
+        }
+
+        const movement = await warehouseService.recordMovement(productId, type, quantity, documentNumber);
+        res.status(201).json(movement);
+    } catch (error) {
+        res.status(400).json({ error: (error as Error).message });
+    }
+});
+
+router.get('/movements', async (req: Request, res: Response) => {
+    try {
+        console.log('GET /movements called');
+        const movements = await warehouseService.getMovements();
+        console.log('Movements response:', movements);
+        res.json(movements || []);
+    } catch (error) {
+        console.error('Error fetching movements:', error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+router.get('/movements/:productId', async (req: Request, res: Response) => {
+    try {
+        const movements = await warehouseService.getMovementsByProduct(req.params.productId);
+        res.json(movements || []);
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+router.get('/status', async (req: Request, res: Response) => {
+    try {
+        const status = await warehouseService.getWarehouseStatus();
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+export default router;
