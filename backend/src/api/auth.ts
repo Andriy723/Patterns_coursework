@@ -23,7 +23,6 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as { adminId?: string; userId?: string; email: string; role?: string };
-        console.log('[AUTH DEBUG] Decoded token:', { adminId: decoded.adminId, userId: decoded.userId, role: decoded.role, email: decoded.email });
         
         if (decoded.adminId) {
             req.adminId = decoded.adminId;
@@ -32,15 +31,13 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
             req.userId = decoded.userId;
             req.role = 'USER';
         } else if (decoded.role) {
-            // Fallback: якщо роль є, але немає adminId/userId
             req.role = decoded.role as 'SUPER_ADMIN' | 'ADMIN' | 'USER';
         }
         req.email = decoded.email;
         
-        console.log('[AUTH DEBUG] Request role set to:', req.role);
         next();
     } catch (error) {
-        console.error('[AUTH DEBUG] Token verification error:', error);
+        console.error('Token verification error:', error);
         res.status(401).json({ error: 'Invalid token' });
     }
 };
@@ -96,13 +93,11 @@ router.post('/login', async (req: Request, res: Response) => {
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
 
-            console.log('[LOGIN DEBUG] User role from DB:', user.role);
             const token = jwt.sign(
                 { adminId: user.id, email: user.email, role: user.role },
                 JWT_SECRET,
                 { expiresIn: TOKEN_EXPIRY }
             );
-            console.log('[LOGIN DEBUG] Token created with role:', user.role);
 
             res.json({
                 token,
@@ -204,6 +199,26 @@ router.delete('/admins/:id', authMiddleware, superAdminOnly, async (req: AuthReq
     }
 });
 
+router.put('/admins/:id/activate', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const pool = getPool();
+        const connection = await pool.getConnection();
+
+        try {
+            await connection.execute(
+                'UPDATE admin_users SET isActive = ? WHERE id = ?',
+                [true, req.params.id]
+            );
+
+            res.json({ success: true });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
 router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
     res.json({
         adminId: req.adminId,
@@ -215,7 +230,6 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 });
 
-// Create User (only SUPER_ADMIN)
 router.post('/users', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
     try {
         const { email, password, name } = req.body;
@@ -247,7 +261,6 @@ router.post('/users', authMiddleware, superAdminOnly, async (req: AuthRequest, r
     }
 });
 
-// Get Users (only SUPER_ADMIN)
 router.get('/users', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
     try {
         const pool = getPool();
@@ -265,7 +278,6 @@ router.get('/users', authMiddleware, superAdminOnly, async (req: AuthRequest, re
     }
 });
 
-// Delete User (only SUPER_ADMIN)
 router.delete('/users/:id', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
     try {
         const pool = getPool();
@@ -284,7 +296,24 @@ router.delete('/users/:id', authMiddleware, superAdminOnly, async (req: AuthRequ
     }
 });
 
-// User login
+router.put('/users/:id/activate', authMiddleware, superAdminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const pool = getPool();
+        const connection = await pool.getConnection();
+        try {
+            await connection.execute(
+                'UPDATE users SET isActive = ? WHERE id = ?',
+                [true, req.params.id]
+            );
+            res.json({ success: true });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
 router.post('/user/login', async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;

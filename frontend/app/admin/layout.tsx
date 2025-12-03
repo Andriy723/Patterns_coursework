@@ -1,4 +1,3 @@
-// frontend/app/admin/layout.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -33,28 +32,28 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                         fontWeight: 'bold',
                         fontSize: '16px',
                     }}>
-                        🏭 Admin
+                        🏭 Адмін-панель
                     </Link>
                     <Link href="/admin/products" style={{
                         textDecoration: 'none',
                         color: '#d1d5db',
                         fontSize: '14px',
                     }}>
-                        📋 Products
+                        📋 Товари
                     </Link>
                     <Link href="/admin/suppliers" style={{
                         textDecoration: 'none',
                         color: '#d1d5db',
                         fontSize: '14px',
                     }}>
-                        🚚 Suppliers
+                        🚚 Постачальники
                     </Link>
                     <Link href="/admin/warehouse" style={{
                         textDecoration: 'none',
                         color: '#d1d5db',
                         fontSize: '14px',
                     }}>
-                        📦 Warehouse
+                        📦 Склад
                     </Link>
                     {isSuperAdmin && (
                         <>
@@ -63,21 +62,21 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                                 color: '#d1d5db',
                                 fontSize: '14px',
                             }}>
-                                👥 Admins
+                                👥 Адміністратори
                             </Link>
                             <Link href="/admin/users" style={{
                                 textDecoration: 'none',
                                 color: '#d1d5db',
                                 fontSize: '14px',
                             }}>
-                                👤 Users
+                                👤 Користувачі
                             </Link>
                             <Link href="/admin/reports" style={{
                                 textDecoration: 'none',
                                 color: '#d1d5db',
                                 fontSize: '14px',
                             }}>
-                                📈 Reports
+                                📈 Звіти
                             </Link>
                         </>
                     )}
@@ -92,7 +91,7 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                         fontSize: '11px',
                         fontWeight: '700',
                     }}>
-                        {isSuperAdmin ? '👑 SUPER ADMIN' : '👤 ADMIN'}
+                        {isSuperAdmin ? '👑 СУПЕР АДМІН' : '👤 АДМІН'}
                     </span>
                     <button
                         onClick={() => setShowMenu(!showMenu)}
@@ -125,7 +124,7 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                             <button
                                 onClick={onLogout}
                                 style={{
-                                    width: '100%',
+                                    width: 'calc(100% - 16px)',
                                     padding: '12px 16px',
                                     backgroundColor: '#fee2e2',
                                     color: '#dc2626',
@@ -136,9 +135,11 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                                     borderRadius: '8px',
                                     margin: '8px',
                                     textAlign: 'left',
+                                    boxSizing: 'border-box',
+                                    whiteSpace: 'nowrap',
                                 }}
                             >
-                                🚪 Logout
+                                🚪 Вийти
                             </button>
                         </div>
                     )}
@@ -154,22 +155,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [role, setRole] = useState('');
+    const [isAdminRoute, setIsAdminRoute] = useState(false);
 
     useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const currentPath = window.location.pathname;
+            setIsAdminRoute(currentPath.startsWith('/admin'));
+        }
+    }, [pathname]);
+
+    if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/admin')) {
+            return <>{children}</>;
+        }
+    }
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        
+        const currentPath = window.location.pathname;
+        
+        if (currentPath === '/admin/login') {
+            setIsCheckingAuth(false);
+            setIsAuthenticated(false);
+            return;
+        }
+
+        if (!currentPath.startsWith('/admin')) {
+            setIsCheckingAuth(false);
+            return;
+        }
+
         const checkAuth = async () => {
             const token = localStorage.getItem('adminToken');
             let storedRole = localStorage.getItem('adminRole');
             
-            console.log('[DEBUG role-check]', {storedRole, pathname: window.location.pathname, token: token ? 'exists' : 'missing'});
-            
             if (!token) {
                 setIsAuthenticated(false);
-                if (pathname !== '/admin/login') router.replace('/admin/login');
+                router.replace('/admin/login');
                 setIsCheckingAuth(false);
                 return;
             }
 
-            // Якщо роль відсутня або undefined, отримуємо її з API
             if (!storedRole || storedRole === 'undefined' || storedRole === 'null') {
                 try {
                     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -181,10 +209,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         const newRole = data.role || 'ADMIN';
                         storedRole = newRole;
                         localStorage.setItem('adminRole', newRole);
-                        console.log('[DEBUG] Fetched role from API:', newRole);
                     }
                 } catch (error) {
-                    console.error('[DEBUG] Error fetching role:', error);
+                    console.error('Error fetching role:', error);
                 }
             }
 
@@ -192,9 +219,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const finalRole = storedRole || 'ADMIN';
             setRole(finalRole);
             
-            if (pathname === '/admin/login') router.replace('/admin');
-            
-            if (finalRole !== 'SUPER_ADMIN' && (pathname.includes('/admin/admins') || pathname.includes('/admin/reports'))) {
+            if (finalRole !== 'SUPER_ADMIN' && (pathname.includes('/admin/admins') || pathname.includes('/admin/reports') || pathname.includes('/admin/users'))) {
                 router.replace('/admin');
             }
             
@@ -207,7 +232,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminEmail');
         localStorage.removeItem('adminRole');
-        router.push('/admin/login');
+        router.push('/user/login');
     };
 
     if (isCheckingAuth) {

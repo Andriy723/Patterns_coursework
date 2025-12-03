@@ -1,4 +1,3 @@
-// backend/src/database.ts
 import mysql from 'mysql2/promise';
 import { Pool } from 'mysql2/promise';
 import dotenv from 'dotenv';
@@ -109,7 +108,6 @@ async function createTables(): Promise<void> {
             )
         `);
 
-        // Створення дефолтного користувача
         const defaultUserEmail = process.env.DEFAULT_USER_EMAIL || 'user1@warehouse.local';
         const defaultUserPassword = process.env.DEFAULT_USER_PASSWORD || 'User123!';
 

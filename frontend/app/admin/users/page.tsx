@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { Modal } from '@/components/Modal';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 interface User {
     id: string;
@@ -21,6 +23,11 @@ export default function UsersPage() {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '', name: '' });
     const [submitting, setSubmitting] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalMessage, setModalMessage] = useState('');
+    const [modalType, setModalType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
@@ -34,15 +41,18 @@ export default function UsersPage() {
 
     const fetchUsers = async () => {
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
             const response = await axios.get(`${baseUrl}/auth/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUsers(response.data);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
             console.error('Error fetching users:', error);
+            setModalMessage('Помилка при завантаженні користувачів');
+            setModalType('error');
+            setShowModal(true);
         } finally {
             setLoading(false);
         }
@@ -60,25 +70,62 @@ export default function UsersPage() {
             setFormData({ email: '', password: '', name: '' });
             setShowForm(false);
             await fetchUsers();
-            alert('User created successfully');
+            setModalMessage('Користувача успішно створено');
+            setModalType('success');
+            setShowModal(true);
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Error creating user');
+            setModalMessage(error.response?.data?.error || 'Помилка при створенні користувача');
+            setModalType('error');
+            setShowModal(true);
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDeleteUser = async (id: string) => {
-        if (!confirm('Deactivate this user?')) return;
+    const handleDeleteUser = (id: string) => {
+        setUserToDelete(id);
+        setShowConfirmModal(true);
+    };
+
+    const confirmDeleteUser = async () => {
+        if (!userToDelete) return;
+        
+        setShowConfirmModal(false);
+        
         try {
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-            await axios.delete(`${baseUrl}/auth/users/${id}`, {
+            await axios.delete(`${baseUrl}/auth/users/${userToDelete}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchUsers();
+            setModalMessage('Користувача успішно деактивовано');
+            setModalType('success');
+            setShowModal(true);
+            setUserToDelete(null);
         } catch (error) {
-            alert('Error deactivating user');
+            setModalMessage('Помилка при деактивації користувача');
+            setModalType('error');
+            setShowModal(true);
+            setUserToDelete(null);
+        }
+    };
+
+    const handleActivateUser = async (id: string) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+            await axios.put(`${baseUrl}/auth/users/${id}/activate`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            await fetchUsers();
+            setModalMessage('Користувача успішно активовано');
+            setModalType('success');
+            setShowModal(true);
+        } catch (error) {
+            setModalMessage('Помилка при активації користувача');
+            setModalType('error');
+            setShowModal(true);
         }
     };
 
@@ -87,7 +134,7 @@ export default function UsersPage() {
     return (
         <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>👤 User Management</h1>
+                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>👤 Управління користувачами</h1>
                 <button
                     onClick={() => setShowForm(!showForm)}
                     style={{
@@ -101,7 +148,7 @@ export default function UsersPage() {
                         fontWeight: '600',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '➕ Create User'}
+                    {showForm ? '✕ Скасувати' : '➕ Створити користувача'}
                 </button>
             </div>
 
@@ -118,7 +165,7 @@ export default function UsersPage() {
                 }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Name
+                            Ім'я
                         </label>
                         <input
                             type="text"
@@ -138,7 +185,7 @@ export default function UsersPage() {
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Email
+                            Електронна пошта
                         </label>
                         <input
                             type="email"
@@ -158,7 +205,7 @@ export default function UsersPage() {
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Password
+                            Пароль
                         </label>
                         <input
                             type="password"
@@ -190,14 +237,28 @@ export default function UsersPage() {
                             fontWeight: '600',
                         }}
                     >
-                        {submitting ? 'Creating...' : 'Create'}
+                        {submitting ? 'Створення...' : 'Створити'}
                     </button>
                 </form>
             )}
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                    <p>⏳ Loading...</p>
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100vh',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                        <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
+                    </div>
                 </div>
             ) : (
                 <div style={{ overflowX: 'auto' }}>
@@ -211,11 +272,11 @@ export default function UsersPage() {
                     }}>
                         <thead style={{ backgroundColor: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
                         <tr>
-                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Name</th>
-                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Email</th>
-                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Status</th>
-                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Created</th>
-                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Actions</th>
+                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Ім'я</th>
+                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Електронна пошта</th>
+                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Статус</th>
+                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Створено</th>
+                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Дії</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -233,14 +294,14 @@ export default function UsersPage() {
                                         fontSize: '12px',
                                         fontWeight: '600',
                                     }}>
-                                        {user.isActive ? 'Active' : 'Inactive'}
+                                        {user.isActive ? 'Активний' : 'Неактивний'}
                                     </span>
                                 </td>
                                 <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                                     {new Date(user.createdAt).toLocaleDateString()}
                                 </td>
                                 <td style={{ padding: '16px', textAlign: 'center' }}>
-                                    {user.isActive && (
+                                    {user.isActive ? (
                                         <button
                                             onClick={() => handleDeleteUser(user.id)}
                                             style={{
@@ -254,7 +315,23 @@ export default function UsersPage() {
                                                 fontWeight: '600',
                                             }}
                                         >
-                                            🗑️ Deactivate
+                                            🗑️ Деактивувати
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleActivateUser(user.id)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                backgroundColor: '#dcfce7',
+                                                color: '#166534',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '12px',
+                                                fontWeight: '600',
+                                            }}
+                                        >
+                                            ✅ Активувати
                                         </button>
                                     )}
                                 </td>
@@ -263,6 +340,27 @@ export default function UsersPage() {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {showModal && (
+                <Modal
+                    message={modalMessage}
+                    type={modalType}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
+
+            {showConfirmModal && (
+                <ConfirmationModal
+                    message="Деактивувати цього користувача?"
+                    onConfirm={confirmDeleteUser}
+                    onCancel={() => {
+                        setShowConfirmModal(false);
+                        setUserToDelete(null);
+                    }}
+                    confirmText="Деактивувати"
+                    cancelText="Скасувати"
+                />
             )}
         </div>
     );

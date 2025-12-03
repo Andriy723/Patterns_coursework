@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { Modal } from '@/components/Modal';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 interface Admin {
     id: string;
@@ -20,6 +22,11 @@ export default function AdminsPage() {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [submitting, setSubmitting] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalMessage, setModalMessage] = useState('');
+    const [modalType, setModalType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [adminToDelete, setAdminToDelete] = useState<{ id: string; role: string } | null>(null);
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
@@ -30,7 +37,6 @@ export default function AdminsPage() {
     const fetchAdmins = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 600));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -39,8 +45,12 @@ export default function AdminsPage() {
             });
 
             setAdmins(response.data);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
             console.error('Error fetching admins:', error);
+            setModalMessage('Помилка при завантаженні адміністраторів');
+            setModalType('error');
+            setShowModal(true);
         } finally {
             setLoading(false);
         }
@@ -63,34 +73,76 @@ export default function AdminsPage() {
             setFormData({ email: '', password: '' });
             setShowForm(false);
             await fetchAdmins();
-            alert('Admin created successfully');
+            setModalMessage('Адміністратора успішно створено');
+            setModalType('success');
+            setShowModal(true);
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Error creating admin');
+            setModalMessage(error.response?.data?.error || 'Помилка при створенні адміністратора');
+            setModalType('error');
+            setShowModal(true);
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDeleteAdmin = async (id: string, role: string) => {
+    const handleDeleteAdmin = (id: string, role: string) => {
         if (role === 'SUPER_ADMIN') {
-            alert('Cannot delete Super Admin');
+            setModalMessage('Неможливо деактивувати Super Admin');
+            setModalType('warning');
+            setShowModal(true);
             return;
         }
 
-        if (!confirm('Deactivate this admin?')) return;
+        setAdminToDelete({ id, role });
+        setShowConfirmModal(true);
+    };
 
+    const confirmDeleteAdmin = async () => {
+        if (!adminToDelete) return;
+        
+        setShowConfirmModal(false);
+        
         try {
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
             await axios.delete(
-                `${baseUrl}/auth/admins/${id}`,
+                `${baseUrl}/auth/admins/${adminToDelete.id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
             await fetchAdmins();
+            setModalMessage('Адміністратора успішно деактивовано');
+            setModalType('success');
+            setShowModal(true);
+            setAdminToDelete(null);
         } catch (error) {
-            alert('Error deactivating admin');
+            setModalMessage('Помилка при деактивації адміністратора');
+            setModalType('error');
+            setShowModal(true);
+            setAdminToDelete(null);
+        }
+    };
+
+    const handleActivateAdmin = async (id: string) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+            await axios.put(
+                `${baseUrl}/auth/admins/${id}/activate`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            await fetchAdmins();
+            setModalMessage('Адміністратора успішно активовано');
+            setModalType('success');
+            setShowModal(true);
+        } catch (error) {
+            setModalMessage('Помилка при активації адміністратора');
+            setModalType('error');
+            setShowModal(true);
         }
     };
 
@@ -101,13 +153,13 @@ export default function AdminsPage() {
     return (
         <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>👥 Admin Management</h1>
+                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>👥 Управління адміністраторами</h1>
                 {isSuperAdmin && (
                 <button
                     onClick={() => setShowForm(!showForm)}
                     style={{ padding: '12px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}
                 >
-                    {showForm ? '✕ Cancel' : '➕ Create Admin'}
+                    {showForm ? '✕ Скасувати' : '➕ Створити адміністратора'}
                 </button>
                 )}
             </div>
@@ -116,7 +168,7 @@ export default function AdminsPage() {
                 <form onSubmit={handleCreateAdmin} style={{ display: 'grid', gap: '16px', maxWidth: '400px', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '30px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Email
+                            Електронна пошта
                         </label>
                         <input
                             type="email"
@@ -137,7 +189,7 @@ export default function AdminsPage() {
 
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Password
+                            Пароль
                         </label>
                         <input
                             type="password"
@@ -170,14 +222,28 @@ export default function AdminsPage() {
                             fontWeight: '600',
                         }}
                     >
-                        {submitting ? 'Creating...' : 'Create'}
+                        {submitting ? 'Створення...' : 'Створити'}
                     </button>
                 </form>
             )}
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                    ⏳ Loading...
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100vh',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                        <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
+                    </div>
                 </div>
             ) : (
                 <div style={{ overflowX: 'auto' }}>
@@ -191,11 +257,11 @@ export default function AdminsPage() {
                     }}>
                         <thead style={{ backgroundColor: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
                         <tr>
-                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Email</th>
-                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Role</th>
-                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Status</th>
-                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Created</th>
-                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Actions</th>
+                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Електронна пошта</th>
+                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Роль</th>
+                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Статус</th>
+                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Створено</th>
+                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Дії</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -227,29 +293,49 @@ export default function AdminsPage() {
                                             fontSize: '12px',
                                             fontWeight: '600',
                                         }}>
-                                            {admin.isActive ? 'Active' : 'Inactive'}
+                                            {admin.isActive ? 'Активний' : 'Неактивний'}
                                         </span>
                                 </td>
                                 <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                                     {new Date(admin.createdAt).toLocaleDateString()}
                                 </td>
                                 <td style={{ padding: '16px', textAlign: 'center' }}>
-                                    {isSuperAdmin && admin.isActive && admin.role !== 'SUPER_ADMIN' && (
-                                        <button
-                                            onClick={() => handleDeleteAdmin(admin.id, admin.role)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                backgroundColor: '#fee2e2',
-                                                color: '#dc2626',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px',
-                                                fontWeight: '600',
-                                            }}
-                                        >
-                                            🗑️ Deactivate
-                                        </button>
+                                    {isSuperAdmin && admin.role !== 'SUPER_ADMIN' && (
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                            {admin.isActive ? (
+                                                <button
+                                                    onClick={() => handleDeleteAdmin(admin.id, admin.role)}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        backgroundColor: '#fee2e2',
+                                                        color: '#dc2626',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                    }}
+                                                >
+                                                    🗑️ Деактивувати
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleActivateAdmin(admin.id)}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        backgroundColor: '#dcfce7',
+                                                        color: '#166534',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                    }}
+                                                >
+                                                    ✅ Активувати
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </td>
                             </tr>
@@ -257,6 +343,27 @@ export default function AdminsPage() {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {showModal && (
+                <Modal
+                    message={modalMessage}
+                    type={modalType}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
+
+            {showConfirmModal && (
+                <ConfirmationModal
+                    message="Деактивувати цього адміністратора?"
+                    onConfirm={confirmDeleteAdmin}
+                    onCancel={() => {
+                        setShowConfirmModal(false);
+                        setAdminToDelete(null);
+                    }}
+                    confirmText="Деактивувати"
+                    cancelText="Скасувати"
+                />
             )}
         </div>
     );

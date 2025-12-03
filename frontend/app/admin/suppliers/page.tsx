@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Modal } from '@/components/Modal';
 
 interface Supplier {
     id: string;
@@ -18,6 +19,9 @@ export default function SuppliersPage() {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ name: '', phone: '', email: '', address: '' });
     const [submitting, setSubmitting] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalMessage, setModalMessage] = useState('');
+    const [modalType, setModalType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
@@ -28,7 +32,6 @@ export default function SuppliersPage() {
     const fetchSuppliers = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 600));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -37,8 +40,12 @@ export default function SuppliersPage() {
             });
 
             setSuppliers(response.data);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
             console.error('Error fetching suppliers:', error);
+            setModalMessage('Помилка при завантаженні постачальників');
+            setModalType('error');
+            setShowModal(true);
         } finally {
             setLoading(false);
         }
@@ -61,9 +68,13 @@ export default function SuppliersPage() {
             setFormData({ name: '', phone: '', email: '', address: '' });
             setShowForm(false);
             await fetchSuppliers();
-            alert('Supplier added successfully');
+            setModalMessage('Постачальника успішно додано');
+            setModalType('success');
+            setShowModal(true);
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Error adding supplier');
+            setModalMessage(error.response?.data?.error || 'Помилка при додаванні постачальника');
+            setModalType('error');
+            setShowModal(true);
         } finally {
             setSubmitting(false);
         }
@@ -72,7 +83,7 @@ export default function SuppliersPage() {
     return (
         <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>🚚 Suppliers</h1>
+                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>🚚 Постачальники</h1>
                 {isSuperAdmin && (
                     <button
                         onClick={() => setShowForm(!showForm)}
@@ -87,16 +98,16 @@ export default function SuppliersPage() {
                             fontWeight: '600',
                         }}
                     >
-                        {showForm ? '✕ Cancel' : '➕ Add Supplier'}
+                        {showForm ? '✕ Скасувати' : '➕ Додати постачальника'}
                     </button>
                 )}
             </div>
-            {!isSuperAdmin && (<div style={{margin:'0 0 24px 0',background:'#e0f2fe',border:'1px solid #bae6fd',borderRadius:'8px',color:'#0369a1',fontSize:'13px',padding:12}}>Сторінка тільки для перегляду. CRUD постачальників дозволено лише Super Admin</div>)}
             {isSuperAdmin && showForm && (
                 <form onSubmit={handleCreateSupplier} style={{
                     display: 'grid',
                     gap: '16px',
                     maxWidth: '400px',
+                    margin: '0 auto',
                     padding: '24px',
                     backgroundColor: '#ffffff',
                     borderRadius: '12px',
@@ -105,7 +116,7 @@ export default function SuppliersPage() {
                 }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Name
+                            Назва
                         </label>
                         <input
                             type="text"
@@ -126,7 +137,7 @@ export default function SuppliersPage() {
 
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Phone
+                            Телефон
                         </label>
                         <input
                             type="tel"
@@ -146,7 +157,7 @@ export default function SuppliersPage() {
 
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Email
+                            Електронна пошта
                         </label>
                         <input
                             type="email"
@@ -166,7 +177,7 @@ export default function SuppliersPage() {
 
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
-                            Address
+                            Адреса
                         </label>
                         <input
                             type="text"
@@ -198,17 +209,31 @@ export default function SuppliersPage() {
                             fontWeight: '600',
                         }}
                     >
-                        {submitting ? 'Adding...' : 'Add Supplier'}
+                        {submitting ? 'Додавання...' : 'Додати постачальника'}
                     </button>
                 </form>
             )}
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                    ⏳ Loading...
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100vh',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                        <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
+                    </div>
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
                     {suppliers.length === 0 ? (
                         <div style={{
                             padding: '40px',
@@ -216,12 +241,16 @@ export default function SuppliersPage() {
                             backgroundColor: '#f9fafb',
                             borderRadius: '12px',
                             color: '#6b7280',
+                            width: '100%',
+                            maxWidth: '800px',
                         }}>
-                            No suppliers available
+                            Постачальників не знайдено
                         </div>
                     ) : (
                         <table style={{
                             width: '100%',
+                            maxWidth: '1000px',
+                            margin: '0 auto',
                             borderCollapse: 'collapse',
                             backgroundColor: '#ffffff',
                             borderRadius: '12px',
@@ -230,10 +259,10 @@ export default function SuppliersPage() {
                         }}>
                             <thead style={{ backgroundColor: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
                             <tr>
-                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Name</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Phone</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Email</th>
-                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Address</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Назва</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Телефон</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Електронна пошта</th>
+                                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#111827', fontSize: '14px' }}>Адреса</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -261,8 +290,16 @@ export default function SuppliersPage() {
                     color: '#0369a1',
                     fontSize: '13px',
                 }}>
-                    ℹ️ Only Super Admins can add or edit suppliers
+                    ℹ️ Тільки Super Admin може додавати або редагувати постачальників
                 </div>
+            )}
+
+            {showModal && (
+                <Modal
+                    message={modalMessage}
+                    type={modalType}
+                    onClose={() => setShowModal(false)}
+                />
             )}
         </div>
     );

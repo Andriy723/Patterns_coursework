@@ -14,6 +14,9 @@ export default function AdminLoginPage() {
 
     useEffect(() => {
         setMounted(true);
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
 
         const token = localStorage.getItem('adminToken');
         if (token) {
@@ -39,11 +42,9 @@ export default function AdminLoginPage() {
                 { timeout: 10000 }
             );
 
-            console.log('[LOGIN] Response data:', response.data);
             localStorage.setItem('adminToken', response.data.token);
             localStorage.setItem('adminEmail', response.data.email);
             localStorage.setItem('adminRole', response.data.role || 'ADMIN');
-            console.log('[LOGIN] Saved role:', response.data.role || 'ADMIN');
             router.push('/admin');
         } catch (err: any) {
             console.error('Login error:', err);
@@ -208,12 +209,13 @@ export default function AdminLoginPage() {
                     borderTop: '1px solid #e5e7eb',
                     fontSize: '12px',
                     color: '#6b7280',
-                    lineHeight: '1.6',
+                    textAlign: 'center',
                 }}>
-                    <p style={{ margin: '0 0 8px 0', fontWeight: '600' }}>📝 Demo Credentials:</p>
-                    <p style={{ margin: '0 0 4px 0' }}>👑 Super Admin:</p>
-                    <p style={{ margin: '0 0 10px 0', fontSize: '11px', marginLeft: '12px' }}>
-                        admin@warehouse.local / Admin123!
+                    <p style={{ margin: 0 }}>
+                        Звичайний користувач?{' '}
+                        <a href="/user/login" style={{ color: '#667eea', fontWeight: '600', textDecoration: 'none' }}>
+                            Увійти як користувач
+                        </a>
                     </p>
                 </div>
             </div>

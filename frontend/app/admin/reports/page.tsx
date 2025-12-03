@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { Modal } from '@/components/Modal';
 
 export default function AdminReportsPage() {
     const router = useRouter();
@@ -11,6 +12,9 @@ export default function AdminReportsPage() {
     const [loading, setLoading] = useState(false);
     const [showJson, setShowJson] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalMessage, setModalMessage] = useState('');
+    const [modalType, setModalType] = useState<'success' | 'error' | 'warning' | 'info'>('error');
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
@@ -27,7 +31,6 @@ export default function AdminReportsPage() {
     const generateReport = async () => {
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -37,8 +40,11 @@ export default function AdminReportsPage() {
             );
 
             setReportData(response.data);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
-            alert('Error loading report');
+            setModalMessage('Помилка при завантаженні звіту');
+            setModalType('error');
+            setShowModal(true);
         } finally {
             setLoading(false);
         }
@@ -51,7 +57,7 @@ export default function AdminReportsPage() {
     return (
         <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
             <h1 style={{ margin: '0 0 30px 0', fontSize: '28px', fontWeight: '700' }}>
-                📈 Reports (Super Admin Only)
+                📈 Звіти
             </h1>
 
             <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '24px', marginTop: '20px' }}>
@@ -64,7 +70,7 @@ export default function AdminReportsPage() {
                     height: 'fit-content',
                 }}>
                     <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '700', color: '#111827', textTransform: 'uppercase' }}>
-                        Select Report
+                        Виберіть звіт
                     </h3>
                     <div style={{ display: 'grid', gap: '10px' }}>
                         {(['status', 'dynamics', 'financial'] as const).map((report) => (
@@ -85,9 +91,9 @@ export default function AdminReportsPage() {
                                     opacity: loading ? 0.6 : 1,
                                 }}
                             >
-                                {report === 'status' && '📊 Status'}
-                                {report === 'dynamics' && '📉 Dynamics'}
-                                {report === 'financial' && '💰 Financial'}
+                                {report === 'status' && '📊 Стан складу'}
+                                {report === 'dynamics' && '📉 Динаміка руху'}
+                                {report === 'financial' && '💰 Фінансовий'}
                             </button>
                         ))}
                         <button
@@ -105,7 +111,7 @@ export default function AdminReportsPage() {
                                 marginTop: '8px',
                             }}
                         >
-                            {loading ? '⏳ Generating...' : '✅ Generate'}
+                            {loading ? '⏳ Генерація...' : '✅ Згенерувати'}
                         </button>
                     </div>
                 </div>
@@ -207,11 +213,19 @@ export default function AdminReportsPage() {
                                             {reportData.summary && reportData.summary.length > 0 && (
                                                 <div style={{ marginBottom: '20px' }}>
                                                     <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600' }}>Підсумок:</h4>
-                                                    {reportData.summary.map((s: any) => (
-                                                        <p key={s.type} style={{ margin: '4px 0' }}>
-                                                            {s.type}: {s.total_quantity} од. ({s.count} операцій)
-                                                        </p>
-                                                    ))}
+                                                    {reportData.summary.map((s: any) => {
+                                                        const typeLabels: Record<string, string> = {
+                                                            INCOME: '📥 Надходження',
+                                                            OUTCOME: '📤 Відвантаження',
+                                                            WRITE_OFF: '🗑️ Списання',
+                                                        };
+                                                        const typeLabel = typeLabels[s.type] || s.type;
+                                                        return (
+                                                            <p key={s.type} style={{ margin: '4px 0' }}>
+                                                                {typeLabel}: {s.total_quantity} од. ({s.count} операцій)
+                                                            </p>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
@@ -221,34 +235,85 @@ export default function AdminReportsPage() {
                                             <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700' }}>
                                                 Фінансова оцінка на {reportData.date}
                                             </h3>
-                                            <p style={{ margin: '0 0 16px 0' }}>Загальна вартість складу: <strong>${reportData.totalInventoryValue}</strong></p>
-                                            {reportData.products && reportData.products.length > 0 && (
-                                                <div style={{ marginTop: '20px' }}>
-                                                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600' }}>Товари:</h4>
-                                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                            <div style={{ 
+                                                marginBottom: '20px', 
+                                                padding: '16px', 
+                                                backgroundColor: '#f0fdf4', 
+                                                borderRadius: '8px', 
+                                                border: '1px solid #bbf7d0' 
+                                            }}>
+                                                <p style={{ margin: '0 0 8px 0', fontSize: '14px' }}>
+                                                    💰 Загальна вартість складу: <strong style={{ fontSize: '18px', color: '#166534' }}>${reportData.totalInventoryValue}</strong>
+                                                </p>
+                                                <p style={{ margin: '0', fontSize: '13px', color: '#6b7280' }}>
+                                                    Кількість товарів: <strong>{reportData.products?.length || 0}</strong>
+                                                </p>
+                                            </div>
+                                            
+                                            {reportData.bySupplier && reportData.bySupplier.length > 0 && (
+                                                <div style={{ marginBottom: '20px' }}>
+                                                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600' }}>📊 Розподіл за постачальниками:</h4>
+                                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginBottom: '20px' }}>
                                                         <thead>
-                                                            <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                                                                <th style={{ padding: '8px', textAlign: 'left' }}>Назва</th>
-                                                                <th style={{ padding: '8px', textAlign: 'left' }}>Артикул</th>
-                                                                <th style={{ padding: '8px', textAlign: 'center' }}>Кількість</th>
-                                                                <th style={{ padding: '8px', textAlign: 'right' }}>Ціна</th>
-                                                                <th style={{ padding: '8px', textAlign: 'right' }}>Вартість</th>
-                                                                <th style={{ padding: '8px', textAlign: 'left' }}>Постачальник</th>
+                                                            <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                                                                <th style={{ padding: '10px', textAlign: 'left' }}>Постачальник</th>
+                                                                <th style={{ padding: '10px', textAlign: 'center' }}>Кількість товарів</th>
+                                                                <th style={{ padding: '10px', textAlign: 'right' }}>Загальна вартість</th>
+                                                                <th style={{ padding: '10px', textAlign: 'right' }}>% від загальної</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {reportData.products.map((p: any) => (
-                                                                <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                                    <td style={{ padding: '8px' }}>{p.name}</td>
-                                                                    <td style={{ padding: '8px' }}>{p.article}</td>
-                                                                    <td style={{ padding: '8px', textAlign: 'center' }}>{p.quantity}</td>
-                                                                    <td style={{ padding: '8px', textAlign: 'right' }}>${Number(p.price || 0).toFixed(2)}</td>
-                                                                    <td style={{ padding: '8px', textAlign: 'right' }}>${Number(p.total_value || 0).toFixed(2)}</td>
-                                                                    <td style={{ padding: '8px' }}>{p.supplierName || 'N/A'}</td>
-                                                                </tr>
-                                                            ))}
+                                                            {reportData.bySupplier.map((s: any, index: number) => {
+                                                                const percentage = ((parseFloat(s.supplier_value || 0) / parseFloat(reportData.totalInventoryValue || 1)) * 100).toFixed(1);
+                                                                return (
+                                                                    <tr key={index} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                                        <td style={{ padding: '10px', fontWeight: '500' }}>{s.supplier || 'Без постачальника'}</td>
+                                                                        <td style={{ padding: '10px', textAlign: 'center' }}>{s.product_count || 0}</td>
+                                                                        <td style={{ padding: '10px', textAlign: 'right', fontWeight: '600', color: '#166534' }}>
+                                                                            ${Number(s.supplier_value || 0).toFixed(2)}
+                                                                        </td>
+                                                                        <td style={{ padding: '10px', textAlign: 'right', color: '#6b7280' }}>
+                                                                            {percentage}%
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
                                                         </tbody>
                                                     </table>
+                                                </div>
+                                            )}
+                                            
+                                            {reportData.products && reportData.products.length > 0 && (
+                                                <div style={{ marginTop: '20px' }}>
+                                                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600' }}>📦 Деталізація товарів:</h4>
+                                                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                                            <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f9fafb' }}>
+                                                                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                                                                    <th style={{ padding: '8px', textAlign: 'left' }}>Назва</th>
+                                                                    <th style={{ padding: '8px', textAlign: 'left' }}>Артикул</th>
+                                                                    <th style={{ padding: '8px', textAlign: 'center' }}>Кількість</th>
+                                                                    <th style={{ padding: '8px', textAlign: 'right' }}>Ціна</th>
+                                                                    <th style={{ padding: '8px', textAlign: 'right' }}>Вартість</th>
+                                                                    <th style={{ padding: '8px', textAlign: 'left' }}>Постачальник</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {reportData.products.map((p: any) => (
+                                                                    <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                                        <td style={{ padding: '8px' }}>{p.name}</td>
+                                                                        <td style={{ padding: '8px' }}>{p.article}</td>
+                                                                        <td style={{ padding: '8px', textAlign: 'center' }}>{p.quantity}</td>
+                                                                        <td style={{ padding: '8px', textAlign: 'right' }}>${Number(p.price || 0).toFixed(2)}</td>
+                                                                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: '600' }}>
+                                                                            ${Number(p.total_value || 0).toFixed(2)}
+                                                                        </td>
+                                                                        <td style={{ padding: '8px' }}>{p.supplierName || 'N/A'}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -266,6 +331,14 @@ export default function AdminReportsPage() {
                     )}
                 </div>
             </div>
+
+            {showModal && (
+                <Modal
+                    message={modalMessage}
+                    type={modalType}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
         </div>
     );
 }

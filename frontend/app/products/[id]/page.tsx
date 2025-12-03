@@ -30,10 +30,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     const fetchProduct = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 500));
             const data = await apiClient.getProduct(params.id);
             setProduct(data);
             setFormData(data);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
             console.error('Error fetching product:', error);
             setModalMessage('Помилка при завантаженні товару');
@@ -77,30 +77,23 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
     if (loading) {
         return (
-            <>
-                <Navigation />
-                <main
-                    style={{
-                        flex: 1,
-                        maxWidth: '1200px',
-                        margin: '0 auto',
-                        width: '100%',
-                        padding: '20px',
-                    }}
-                >
-                    <div
-                        style={{
-                            padding: '60px 40px',
-                            textAlign: 'center',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '12px',
-                            color: '#6b7280',
-                        }}
-                    >
-                        <p style={{ fontSize: '18px' }}>⏳ Завантаження...</p>
-                    </div>
-                </main>
-            </>
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100vh',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                    <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
+                </div>
+            </div>
         );
     }
 

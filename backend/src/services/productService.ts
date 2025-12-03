@@ -107,7 +107,7 @@ export class ProductService {
             const values: any[] = [];
 
             Object.entries(data).forEach(([key, value]) => {
-                if (key !== 'id' && key !== 'createdAt') {
+                if (key !== 'id' && key !== 'createdAt' && key !== 'updatedAt') {
                     updates.push(`${key} = ?`);
                     values.push(value);
                 }
@@ -135,6 +135,16 @@ export class ProductService {
         const connection = await pool.getConnection();
 
         try {
+            await connection.execute(
+                `DELETE FROM stock_alerts WHERE productId = ?`,
+                [id]
+            );
+
+            await connection.execute(
+                `DELETE FROM warehouse_movements WHERE productId = ?`,
+                [id]
+            );
+
             const [result] = await connection.execute(
                 `DELETE FROM products WHERE id = ?`,
                 [id]

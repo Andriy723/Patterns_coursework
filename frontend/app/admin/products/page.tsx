@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api';
 import type { Product, Supplier } from '@/types';
 import { Modal } from '@/components/Modal';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 import Link from 'next/link';
 import { AdminNav } from '@/components/AdminNav';
 import axios from 'axios';
@@ -21,6 +22,8 @@ export default function AdminProductsPage() {
     const [modalMessage, setModalMessage] = useState('');
     const [modalType, setModalType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
@@ -31,8 +34,6 @@ export default function AdminProductsPage() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            // Додаємо затримку для плавного завантаження
-            await new Promise(resolve => setTimeout(resolve, 500));
             
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -45,7 +46,6 @@ export default function AdminProductsPage() {
             const productsData = productsRes.data || [];
             const suppliersData = suppliersRes.data || [];
             
-            // Додаємо назву постачальника до кожного продукту
             const productsWithSuppliers = productsData.map((product: Product) => {
                 const supplier = suppliersData.find((s: Supplier) => s.id === product.supplierId);
                 return {
@@ -56,6 +56,7 @@ export default function AdminProductsPage() {
             
             setProducts(productsWithSuppliers);
             setSuppliers(suppliersData);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
             console.error('Error:', error);
             setModalMessage('Помилка при завантаженні товарів');
@@ -66,23 +67,30 @@ export default function AdminProductsPage() {
         }
     };
 
-    const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Ви впевнені, що хочете видалити "${name}"?`)) {
-            return;
-        }
+    const handleDelete = (id: string, name: string) => {
+        setProductToDelete({ id, name });
+        setShowConfirmModal(true);
+    };
 
-        setDeleting(id);
+    const confirmDelete = async () => {
+        if (!productToDelete) return;
+        
+        setShowConfirmModal(false);
+        setDeleting(productToDelete.id);
+        
         try {
-                            await apiClient.deleteProduct(id);
+            await apiClient.deleteProduct(productToDelete.id);
             await fetchData();
-            setModalMessage(`Товар "${name}" успішно видалено`);
+            setModalMessage(`Товар "${productToDelete.name}" успішно видалено`);
             setModalType('success');
             setShowModal(true);
+            setProductToDelete(null);
         } catch (error: any) {
             const errorMessage = error.response?.data?.error || 'Помилка при видаленні';
             setModalMessage(errorMessage);
             setModalType('error');
             setShowModal(true);
+            setProductToDelete(null);
         } finally {
             setDeleting(null);
         }
@@ -141,14 +149,22 @@ export default function AdminProductsPage() {
                 {loading ? (
                     <div
                         style={{
-                            padding: '60px 40px',
-                            textAlign: 'center',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '12px',
-                            color: '#6b7280',
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100vh',
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999
                         }}
                     >
-                        <p style={{ fontSize: '18px' }}>⏳ Завантаження...</p>
+                        <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                            <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
+                        </div>
                     </div>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
@@ -411,6 +427,19 @@ export default function AdminProductsPage() {
                     message={modalMessage}
                     type={modalType}
                     onClose={() => setShowModal(false)}
+                />
+            )}
+
+            {showConfirmModal && productToDelete && (
+                <ConfirmationModal
+                    message={`Ви впевнені, що хочете видалити "${productToDelete.name}"?`}
+                    onConfirm={confirmDelete}
+                    onCancel={() => {
+                        setShowConfirmModal(false);
+                        setProductToDelete(null);
+                    }}
+                    confirmText="Видалити"
+                    cancelText="Скасувати"
                 />
             )}
         </>

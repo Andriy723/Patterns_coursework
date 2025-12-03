@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { Navigation } from '@/components/Navigation';
+import { UserNavigation } from '@/components/UserNavigation';
 import type { WarehouseStatus } from '@/types';
 
 export default function HomePage() {
@@ -11,6 +12,7 @@ export default function HomePage() {
     const [loading, setLoading] = useState(true);
     const [apiUrl, setApiUrl] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isUser, setIsUser] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -23,6 +25,7 @@ export default function HomePage() {
                 return;
             }
             setIsAuthenticated(true);
+            setIsUser(!!userToken && !adminToken);
         };
         checkAuth();
     }, []);
@@ -30,9 +33,9 @@ export default function HomePage() {
     const fetchStatus = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 800));
             const data = await apiClient.getWarehouseStatus();
             setStatus(data);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
             console.error('Error fetching warehouse status:', error);
             setStatus(null);
@@ -47,6 +50,13 @@ export default function HomePage() {
         }
     }, [apiUrl, isAuthenticated]);
 
+    const handleLogout = () => {
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+        router.push('/user/login');
+    };
+
     if (!isAuthenticated) {
         return (
             <div style={{ padding: '40px', textAlign: 'center', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -57,7 +67,7 @@ export default function HomePage() {
 
     return (
         <>
-            <Navigation />
+            {isUser ? <UserNavigation onLogout={handleLogout} /> : <Navigation />}
             <main
                 style={{
                     flex: 1,
@@ -77,17 +87,22 @@ export default function HomePage() {
                 </div>
 
                 {loading ? (
-                    <div
-                        style={{
-                            padding: '40px',
-                            textAlign: 'center',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '12px',
-                            color: '#6b7280',
-                        }}
-                    >
-                        <div style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</div>
-                        <p>Завантаження даних...</p>
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100vh',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999
+                    }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                            <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження даних...</p>
+                        </div>
                     </div>
                 ) : status ? (
                     <div
@@ -130,12 +145,14 @@ export default function HomePage() {
                                         {status.stats.total_quantity} од.
                                     </strong>
                                 </p>
-                                <p style={{ margin: 0, color: '#1e40af', fontSize: '14px' }}>
-                                    Сума залишків:{' '}
-                                    <strong style={{ fontSize: '18px' }}>
-                                        ${Number(status.stats.total_value ?? 0).toFixed(2)}
-                                    </strong>
-                                </p>
+                                {!isUser && (
+                                    <p style={{ margin: 0, color: '#1e40af', fontSize: '14px' }}>
+                                        Сума залишків:{' '}
+                                        <strong style={{ fontSize: '18px' }}>
+                                            ${Number(status.stats.total_value ?? 0).toFixed(2)}
+                                        </strong>
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -182,92 +199,94 @@ export default function HomePage() {
                             )}
                         </div>
 
-                        <div
-                            style={{
-                                backgroundColor: '#f3e8ff',
-                                padding: '24px',
-                                borderRadius: '12px',
-                                border: '1px solid #e9d5ff',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-                            }}
-                        >
-                            <h3
+                        {!isUser && (
+                            <div
                                 style={{
-                                    margin: '0 0 16px 0',
-                                    fontSize: '16px',
-                                    fontWeight: '700',
-                                    color: '#6b21a8',
+                                    backgroundColor: '#f3e8ff',
+                                    padding: '24px',
+                                    borderRadius: '12px',
+                                    border: '1px solid #e9d5ff',
+                                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                                 }}
                             >
-                                🔗 Швидкі посилання
-                            </h3>
-                            <ul
-                                style={{
-                                    margin: 0,
-                                    paddingLeft: '20px',
-                                    display: 'grid',
-                                    gap: '8px',
-                                }}
-                            >
-                                <li>
-                                    <a
-                                        href="/products"
-                                        style={{
-                                            color: '#6b21a8',
-                                            textDecoration: 'none',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.textDecoration = 'underline';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.textDecoration = 'none';
-                                        }}
-                                    >
-                                        📋 Переглянути товари
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href="/warehouse"
-                                        style={{
-                                            color: '#6b21a8',
-                                            textDecoration: 'none',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.textDecoration = 'underline';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.textDecoration = 'none';
-                                        }}
-                                    >
-                                        🏭 Управління рухом
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href="/reports"
-                                        style={{
-                                            color: '#6b21a8',
-                                            textDecoration: 'none',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.textDecoration = 'underline';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.textDecoration = 'none';
-                                        }}
-                                    >
-                                        📈 Звіти
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
+                                <h3
+                                    style={{
+                                        margin: '0 0 16px 0',
+                                        fontSize: '16px',
+                                        fontWeight: '700',
+                                        color: '#6b21a8',
+                                    }}
+                                >
+                                    🔗 Швидкі посилання
+                                </h3>
+                                <ul
+                                    style={{
+                                        margin: 0,
+                                        paddingLeft: '20px',
+                                        display: 'grid',
+                                        gap: '8px',
+                                    }}
+                                >
+                                    <li>
+                                        <a
+                                            href="/products"
+                                            style={{
+                                                color: '#6b21a8',
+                                                textDecoration: 'none',
+                                                fontSize: '14px',
+                                                fontWeight: '500',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.textDecoration = 'underline';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.textDecoration = 'none';
+                                            }}
+                                        >
+                                            📋 Переглянути товари
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a
+                                            href="/warehouse"
+                                            style={{
+                                                color: '#6b21a8',
+                                                textDecoration: 'none',
+                                                fontSize: '14px',
+                                                fontWeight: '500',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.textDecoration = 'underline';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.textDecoration = 'none';
+                                            }}
+                                        >
+                                            🏭 Управління рухом
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a
+                                            href="/reports"
+                                            style={{
+                                                color: '#6b21a8',
+                                                textDecoration: 'none',
+                                                fontSize: '14px',
+                                                fontWeight: '500',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.textDecoration = 'underline';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.textDecoration = 'none';
+                                            }}
+                                        >
+                                            📈 Звіти
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div

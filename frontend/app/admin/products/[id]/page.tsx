@@ -8,6 +8,31 @@ import { Modal } from '@/components/Modal';
 import Link from 'next/link';
 
 export default function AdminProductEditPage({ params }: { params: { id: string } }) {
+    const router = useRouter();
+    
+    if (params.id === 'create') {
+        router.replace('/admin/products/create');
+        return (
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100vh',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                    <p style={{ fontSize: '18px', color: '#6b7280' }}>Перенаправлення...</p>
+                </div>
+            </div>
+        );
+    }
+
     const [product, setProduct] = useState<Product | null>(null);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
@@ -16,7 +41,6 @@ export default function AdminProductEditPage({ params }: { params: { id: string 
     const [modalMessage, setModalMessage] = useState('');
     const [modalType, setModalType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
     const [formData, setFormData] = useState<Partial<Product>>({});
-    const router = useRouter();
 
     useEffect(() => {
         const token = localStorage.getItem('adminToken');
@@ -25,12 +49,11 @@ export default function AdminProductEditPage({ params }: { params: { id: string 
             return;
         }
         fetchData();
-    }, [params.id]);
+    }, [params.id, router]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 500));
             
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -47,6 +70,7 @@ export default function AdminProductEditPage({ params }: { params: { id: string 
             setProduct(productRes.data);
             setFormData(productRes.data);
             setSuppliers(suppliersRes.data);
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error: any) {
             console.error('Error:', error);
             setModalMessage('Помилка при завантаженні товару');
@@ -89,11 +113,23 @@ export default function AdminProductEditPage({ params }: { params: { id: string 
 
     if (loading) {
         return (
-            <main style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
-                <div style={{ padding: '60px 40px', textAlign: 'center', backgroundColor: '#f9fafb', borderRadius: '12px', color: '#6b7280' }}>
-                    <p style={{ fontSize: '18px' }}>⏳ Завантаження...</p>
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100vh',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                    <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
                 </div>
-            </main>
+            </div>
         );
     }
 
@@ -122,7 +158,7 @@ export default function AdminProductEditPage({ params }: { params: { id: string 
                     ✏️ Редагувати товар
                 </h1>
 
-                <form onSubmit={handleUpdate} style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                <form onSubmit={handleUpdate} style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', height: 'auto', minHeight: 'auto' }}>
                     <div style={{ display: 'grid', gap: '20px' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
@@ -213,7 +249,22 @@ export default function AdminProductEditPage({ params }: { params: { id: string 
                             />
                         </div>
 
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                            <Link
+                                href="/admin/products"
+                                style={{
+                                    padding: '12px 24px',
+                                    backgroundColor: '#e5e7eb',
+                                    color: '#374151',
+                                    textDecoration: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    display: 'inline-block',
+                                }}
+                            >
+                                Скасувати
+                            </Link>
                             <button
                                 type="submit"
                                 disabled={updating}
@@ -230,21 +281,6 @@ export default function AdminProductEditPage({ params }: { params: { id: string 
                             >
                                 {updating ? '⏳ Оновлення...' : '💾 Зберегти зміни'}
                             </button>
-                            <Link
-                                href="/admin/products"
-                                style={{
-                                    padding: '12px 24px',
-                                    backgroundColor: '#e5e7eb',
-                                    color: '#374151',
-                                    textDecoration: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '14px',
-                                    fontWeight: '600',
-                                    display: 'inline-block',
-                                }}
-                            >
-                                Скасувати
-                            </Link>
                         </div>
                     </div>
                 </form>

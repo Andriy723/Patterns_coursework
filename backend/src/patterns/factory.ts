@@ -20,15 +20,11 @@ abstract class MovementProcessor {
             const date = new Date();
             const dateString = date.toISOString().slice(0, 19).replace('T', ' ');
 
-            console.log('Creating movement:', { id, productId, type, quantity, dateString, documentNumber, notes });
-
-            const [result] = await connection.execute(
+            await connection.execute(
                 `INSERT INTO warehouse_movements (id, productId, type, quantity, \`date\`, documentNumber, notes) 
                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [id, productId, type, parseInt(quantity.toString()), dateString, documentNumber, notes]
             );
-
-            console.log('Movement created successfully:', result);
 
             return {
                 id,
