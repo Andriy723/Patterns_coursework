@@ -56,9 +56,13 @@ class ApiClient {
         });
 
         this.client.interceptors.request.use((config) => {
-            const token = localStorage.getItem('adminToken');
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+            const adminToken = localStorage.getItem('adminToken');
+            const userToken = localStorage.getItem('userToken');
+            
+            if (adminToken) {
+                config.headers.Authorization = `Bearer ${adminToken}`;
+            } else if (userToken) {
+                config.headers.Authorization = `Bearer ${userToken}`;
             }
             return config;
         });
@@ -67,8 +71,16 @@ class ApiClient {
             (response) => response,
             (error) => {
                 if (error.response?.status === 401) {
-                    localStorage.removeItem('adminToken');
-                    window.location.href = '/admin/login';
+                    const adminToken = localStorage.getItem('adminToken');
+                    const userToken = localStorage.getItem('userToken');
+                    
+                    if (adminToken) {
+                        localStorage.removeItem('adminToken');
+                        window.location.href = '/admin/login';
+                    } else if (userToken) {
+                        localStorage.removeItem('userToken');
+                        window.location.href = '/user/login';
+                    }
                 }
                 return Promise.reject(error);
             }

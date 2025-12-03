@@ -42,9 +42,9 @@ export default function AdminWarehousePage() {
     const itemsPerPage = 5;
     const totalPages = showAllMovements ? Math.ceil(movements.length / itemsPerPage) : 0;
     const startIdx = showAllMovements ? (currentPage - 1) * itemsPerPage : 0;
-    const endIdx = showAllMovements ? startIdx + itemsPerPage : 5;
+    const endIdx = showAllMovements ? startIdx + itemsPerPage : Math.min(5, movements.length);
     const displayedMovements = movements.slice(startIdx, endIdx);
-    const showPagination = showAllMovements && movements.length > 5;
+    const showPagination = showAllMovements && movements.length > itemsPerPage;
 
     useEffect(() => {
         fetchData();
@@ -57,24 +57,27 @@ export default function AdminWarehousePage() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 600));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
             const [movementsRes, productsRes] = await Promise.all([
                 axios.get(`${baseUrl}/warehouse/movements`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
+                    timeout: 15000
                 }),
                 axios.get(`${baseUrl}/products`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
+                    timeout: 15000
                 }),
             ]);
 
             setMovements(movementsRes.data || []);
             setProducts(productsRes.data || []);
-        } catch (error) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (error: any) {
             console.error('Error fetching data:', error);
-            setModalMessage('Помилка при завантаженні даних');
+            const errorMessage = error.response?.data?.error || error.message || 'Помилка при завантаженні даних';
+            setModalMessage(errorMessage);
             setModalType('error');
             setShowModal(true);
         } finally {
@@ -162,6 +165,28 @@ export default function AdminWarehousePage() {
         return product ? product.name : productId;
     };
 
+    if (loading) {
+        return (
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100vh',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                    <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <main
@@ -183,6 +208,7 @@ export default function AdminWarehousePage() {
                         gridTemplateColumns: '1fr 1fr',
                         gap: '24px',
                         marginTop: '20px',
+                        alignItems: 'start',
                     }}
                 >
                     <div
@@ -192,6 +218,8 @@ export default function AdminWarehousePage() {
                             borderRadius: '12px',
                             border: '1px solid #e5e7eb',
                             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                            height: 'auto',
+                            minHeight: 'auto',
                         }}
                     >
                         <h2
@@ -409,19 +437,7 @@ export default function AdminWarehousePage() {
                             )}
                         </div>
 
-                        {loading ? (
-                            <div
-                                style={{
-                                    padding: '40px',
-                                    textAlign: 'center',
-                                    backgroundColor: '#f9fafb',
-                                    borderRadius: '12px',
-                                    color: '#6b7280',
-                                }}
-                            >
-                                <p>⏳ Завантаження...</p>
-                            </div>
-                        ) : (
+                        {loading ? null : (
                             <>
                                 <div style={{ marginBottom: '16px' }}>
                                     {displayedMovements && displayedMovements.length > 0 ? (
@@ -490,6 +506,52 @@ export default function AdminWarehousePage() {
                                         </div>
                                     )}
                                 </div>
+                                {showPagination && (
+                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                            disabled={currentPage === 1}
+                                            style={{
+                                                padding: '8px 16px',
+                                                backgroundColor: currentPage === 1 ? '#e5e7eb' : '#3b82f6',
+                                                color: currentPage === 1 ? '#9ca3af' : 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                            }}
+                                        >
+                                            ← Попередня
+                                        </button>
+                                        <span style={{
+                                            padding: '8px 16px',
+                                            backgroundColor: '#f3f4f6',
+                                            borderRadius: '6px',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            color: '#374151',
+                                        }}>
+                                            Сторінка {currentPage} з {totalPages}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                            disabled={currentPage === totalPages}
+                                            style={{
+                                                padding: '8px 16px',
+                                                backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#3b82f6',
+                                                color: currentPage === totalPages ? '#9ca3af' : 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                            }}
+                                        >
+                                            Наступна →
+                                        </button>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>

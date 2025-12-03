@@ -12,7 +12,6 @@ function TopHeader() {
     if (typeof window === 'undefined') return null;
     
     const pathname = window.location.pathname;
-    // Не показувати хедер на адмін-роутах (вони мають свою навігацію)
     if (pathname.startsWith('/admin')) return null;
     
     const userToken = localStorage.getItem('userToken');

@@ -30,9 +30,7 @@ router.post('/movement', authMiddleware, adminOnly, async (req: Request, res: Re
 
 router.get('/movements', authMiddleware, adminOnly, async (req: Request, res: Response) => {
     try {
-        console.log('GET /movements called');
         const movements = await warehouseService.getMovements();
-        console.log('Movements response:', movements);
         res.json(movements || []);
     } catch (error) {
         console.error('Error fetching movements:', error);
@@ -44,34 +42,6 @@ router.get('/movements/:productId', authMiddleware, adminOnly, async (req: Reque
     try {
         const movements = await warehouseService.getMovementsByProduct(req.params.productId);
         res.json(movements || []);
-    } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
-    }
-});
-
-// Public GET /status for USER (без ціни якщо USER, з ціною якщо admin)
-router.get('/status', async (req: Request, res: Response) => {
-    try {
-        const status = await warehouseService.getWarehouseStatus();
-        const token = req.headers.authorization?.split(' ')[1];
-        let role = null;
-        if (token) {
-            const jwt = require('jsonwebtoken');
-            const decoded = jwt.decode(token);
-            role = decoded?.role;
-        }
-        let products = status.products;
-        if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
-            // видалити price field
-            products = products.map((p: any) => {
-                const { price, ...rest } = p;
-                return rest;
-            });
-        }
-        res.json({
-            ...status,
-            products
-        });
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
     }

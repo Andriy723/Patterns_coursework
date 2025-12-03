@@ -19,19 +19,20 @@ export default function AdminDashboardPage() {
     const fetchStats = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 700));
             const token = localStorage.getItem('adminToken');
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
             const response = await axios.get(`${baseUrl}/warehouse/status`, {
                 headers: { Authorization: `Bearer ${token}` },
-                timeout: 10000,
+                timeout: 15000,
             });
 
             setStats(response.data?.stats);
-        } catch (err) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (err: any) {
             console.error('Error fetching stats:', err);
-            setError('Failed to load statistics');
+            const errorMessage = err.response?.data?.error || err.message || 'Не вдалось завантажити статистику';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -41,10 +42,10 @@ export default function AdminDashboardPage() {
         <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '20px' }}>
             <div style={{ marginBottom: '30px' }}>
                 <h1 style={{ margin: '0 0 10px 0', fontSize: '28px', fontWeight: '700' }}>
-                    🏭 Admin Dashboard
+                    🏭 Адмін-панель
                 </h1>
                 <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
-                    Logged in as: <strong>{email || 'Admin'}</strong>
+                    Ввійшли як: <strong>{email || 'Адмін'}</strong>
                 </p>
             </div>
 
@@ -62,8 +63,22 @@ export default function AdminDashboardPage() {
             )}
 
             {loading ? (
-                <div style={{ padding: '60px 40px', textAlign: 'center', backgroundColor: '#f9fafb', borderRadius: '12px' }}>
-                    <p style={{ fontSize: '18px', color: '#6b7280' }}>⏳ Loading...</p>
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100vh',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
+                        <p style={{ fontSize: '18px', color: '#6b7280' }}>Завантаження...</p>
+                    </div>
                 </div>
             ) : stats ? (
                 <div style={{
@@ -79,7 +94,7 @@ export default function AdminDashboardPage() {
                         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                     }}>
                         <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#1e40af' }}>
-                            📦 Total Products
+                            📦 Всього товарів
                         </h3>
                         <p style={{ margin: 0, fontSize: '36px', fontWeight: '700', color: '#1e40af' }}>
                             {stats?.total_items || 0}
@@ -94,10 +109,10 @@ export default function AdminDashboardPage() {
                         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                     }}>
                         <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#166534' }}>
-                            📊 Total Quantity
+                            📊 Загальна кількість
                         </h3>
                         <p style={{ margin: 0, fontSize: '36px', fontWeight: '700', color: '#166534' }}>
-                            {stats?.total_quantity || 0} units
+                            {stats?.total_quantity || 0} од.
                         </p>
                     </div>
 
@@ -109,7 +124,7 @@ export default function AdminDashboardPage() {
                         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                     }}>
                         <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#92400e' }}>
-                            💰 Total Value
+                            💰 Загальна вартість
                         </h3>
                         <p style={{ margin: 0, fontSize: '36px', fontWeight: '700', color: '#92400e' }}>
                             ${Number(stats?.total_value ?? 0).toFixed(2)}
@@ -125,13 +140,13 @@ export default function AdminDashboardPage() {
                     border: '1px solid #fecaca',
                     color: '#991b1b',
                 }}>
-                    <p style={{ margin: 0, fontWeight: '600' }}>No data available</p>
+                    <p style={{ margin: 0, fontWeight: '600' }}>Дані недоступні</p>
                 </div>
             )}
 
             <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#f0f9ff', borderRadius: '12px', border: '1px solid #e0f2fe' }}>
                 <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700', color: '#0369a1' }}>
-                    📚 Quick Links
+                    📚 Швидкі посилання
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                     <a href="/admin/products" style={{
@@ -142,8 +157,11 @@ export default function AdminDashboardPage() {
                         borderRadius: '8px',
                         textAlign: 'center',
                         fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                     }}>
-                        📋 Manage Products
+                        📋 Управління товарами
                     </a>
                     <a href="/admin/suppliers" style={{
                         padding: '12px',
@@ -153,8 +171,11 @@ export default function AdminDashboardPage() {
                         borderRadius: '8px',
                         textAlign: 'center',
                         fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                     }}>
-                        🚚 Manage Suppliers
+                        🚚 Управління постачальниками
                     </a>
                     {isSuperAdmin && (
                         <>
@@ -166,8 +187,11 @@ export default function AdminDashboardPage() {
                                 borderRadius: '8px',
                                 textAlign: 'center',
                                 fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                             }}>
-                                📈 View Reports
+                                📈 Переглянути звіти
                             </a>
                             <a href="/admin/admins" style={{
                                 padding: '12px',
@@ -177,8 +201,11 @@ export default function AdminDashboardPage() {
                                 borderRadius: '8px',
                                 textAlign: 'center',
                                 fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                             }}>
-                                👥 Manage Admins
+                                👥 Управління адміністраторами
                             </a>
                         </>
                     )}

@@ -62,22 +62,4 @@ router.get('/low-stock/list', authMiddleware, adminOnly, async (req: Request, re
     }
 });
 
-// Public GET: products for USER (без цін і без suppliers)
-router.get('/public-simple', async (req: Request, res: Response) => {
-    try {
-        const products = await productService.getAllProducts();
-        // Відбираємо лише потрібні поля
-        const publicProducts = products.map(p => ({
-            id: p.id,
-            name: p.name,
-            article: p.article,
-            quantity: p.quantity,
-            minStock: p.minStock
-        }));
-        res.json(publicProducts);
-    } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
-    }
-});
-
 export default router;

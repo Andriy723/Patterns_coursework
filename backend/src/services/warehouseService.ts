@@ -49,13 +49,8 @@ export class WarehouseService {
         const connection = await pool.getConnection();
 
         try {
-            console.log('Executing SELECT query for movements with limit:', limit);
-
             const query = `SELECT * FROM warehouse_movements ORDER BY \`date\` DESC LIMIT ${Math.floor(limit)}`;
             const [rows] = await connection.execute(query);
-
-            console.log('Query result:', rows);
-            console.log('Number of rows:', Array.isArray(rows) ? rows.length : 0);
 
             const movements = (rows as WarehouseMovement[]) || [];
             return movements;

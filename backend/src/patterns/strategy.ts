@@ -53,15 +53,26 @@ export class MovementDynamicsReportStrategy implements ReportStrategy {
         const connection = await pool.getConnection();
 
         try {
-            const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-            const startDateStr = startDate.toISOString().split('T')[0];
-            const endDateStr = endDate.toISOString().split('T')[0];
-
+            const endDate = new Date(startDate);
+            const startDateYearAgo = new Date(startDate);
+            startDateYearAgo.setFullYear(startDateYearAgo.getFullYear() - 1);
+            
+            const startYear = startDateYearAgo.getUTCFullYear();
+            const startMonth = String(startDateYearAgo.getUTCMonth() + 1).padStart(2, '0');
+            const startDay = String(startDateYearAgo.getUTCDate()).padStart(2, '0');
+            const startDateStr = `${startYear}-${startMonth}-${startDay}`;
+            
+            const endYear = endDate.getUTCFullYear();
+            const endMonth = String(endDate.getUTCMonth() + 1).padStart(2, '0');
+            const endDay = String(endDate.getUTCDate()).padStart(2, '0');
+            const endDateStr = `${endYear}-${endMonth}-${endDay}`;
+            
             const [movements] = await connection.execute(
                 `SELECT wm.*, p.name, p.article
                  FROM warehouse_movements wm
                           LEFT JOIN products p ON wm.productId = p.id
-                 WHERE DATE(wm.\`date\`) BETWEEN ? AND ?
+                 WHERE DATE_FORMAT(wm.\`date\`, '%Y-%m-%d') >= ?
+                   AND DATE_FORMAT(wm.\`date\`, '%Y-%m-%d') <= ?
                  ORDER BY wm.\`date\` DESC`,
                 [startDateStr, endDateStr]
             );
@@ -72,7 +83,8 @@ export class MovementDynamicsReportStrategy implements ReportStrategy {
                      COUNT(*) as count,
                      SUM(quantity) as total_quantity
                  FROM warehouse_movements
-                 WHERE DATE(\`date\`) BETWEEN ? AND ?
+                 WHERE DATE_FORMAT(\`date\`, '%Y-%m-%d') >= ?
+                   AND DATE_FORMAT(\`date\`, '%Y-%m-%d') <= ?
                  GROUP BY type`,
                 [startDateStr, endDateStr]
             );
@@ -115,21 +127,28 @@ export class FinancialReportStrategy implements ReportStrategy {
                 return sum + value;
             }, 0);
 
-            const [bySupplier] = await connection.execute(
+            const [bySupplierRows] = await connection.execute(
                 `SELECT
-                     s.name as supplier,
+                     s.name as supplierName,
                      COUNT(p.id) as product_count,
                      SUM(p.quantity * p.price) as supplier_value
                  FROM products p
                           LEFT JOIN suppliers s ON p.supplierId = s.id
-                 GROUP BY p.supplierId, s.name`
+                 GROUP BY p.supplierId, s.name
+                 ORDER BY supplier_value DESC`
             );
+
+            const bySupplier = (bySupplierRows as any[] || []).map((s: any) => ({
+                supplier: s.supplierName || 'Без постачальника',
+                product_count: s.product_count,
+                supplier_value: s.supplier_value
+            }));
 
             return {
                 date: date.toISOString().split('T')[0],
                 totalInventoryValue: totalInventoryValue.toFixed(2),
                 products: productList,
-                bySupplier: bySupplier || [],
+                bySupplier: bySupplier,
                 reportType: 'FINANCIAL',
             };
         } finally {

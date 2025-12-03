@@ -1,4 +1,3 @@
-// frontend/app/suppliers/page.tsx
 'use client';
 
 import { apiClient } from '@/lib/api';
