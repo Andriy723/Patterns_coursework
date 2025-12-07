@@ -382,8 +382,11 @@ graph TB
     UC9 -.->|include| INC1
     UC10 -.->|include| INC1
     
+    UC3 -.->|extend| UC1
+    UC4 -.->|extend| UC1
+    UC5 -.->|extend| UC1
     EXT1 -.->|extend| UC5
-    EXT2 -.->|extend| UC4
+    EXT2 -.->|extend| UC1
     
     style System fill:#f9fafb,stroke:#374151,stroke-width:3px
     style User fill:#e1f5ff,stroke:#0369a1,stroke-width:2px
