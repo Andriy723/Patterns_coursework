@@ -337,74 +337,45 @@ graph TB
     subgraph System["Система складського обліку"]
         direction TB
         UC1(Перегляд товарів)
-        UC2(Перегляд залишків складу)
-        UC3(Управління товарами)
-        UC4(Управління рухом товарів)
-        UC5(Створення накладних та актів)
-        UC6(Управління постачальниками)
-        UC7(Управління контрагентами)
-        UC8(Генерація звітів)
-        UC9(Управління користувачами)
-        UC10(Управління адміністраторами)
+        UC2(Управління товарами)
+        UC3(Управління рухом товарів)
+        UC4(Створення накладних та актів)
+        UC5(Управління постачальниками)
+        UC6(Генерація звітів)
         
         INC1(Автентифікуватися)
-        INC2(Валідувати дані)
-        INC3(Створити рухи товарів)
         
         EXT1(Згенерувати номер документа)
-        EXT2(Перевірити залишки товарів)
-        EXT3(Перевірити унікальність артикулу)
-        EXT4(Сповістити про низький запас)
+        EXT2(Сповістити про низький запас)
     end
     
     User --> UC1
-    User --> UC2
     
     Admin --> UC1
     Admin --> UC2
     Admin --> UC3
     Admin --> UC4
-    Admin --> UC5
     
+    SuperAdmin --> UC2
     SuperAdmin --> UC3
     SuperAdmin --> UC4
     SuperAdmin --> UC5
     SuperAdmin --> UC6
-    SuperAdmin --> UC7
-    SuperAdmin --> UC8
-    SuperAdmin --> UC9
-    SuperAdmin --> UC10
     
-    UC1 -.->|<<include>>| INC1
-    UC2 -.->|<<include>>| INC1
-    UC3 -.->|<<include>>| INC1
-    UC3 -.->|<<include>>| INC2
-    UC4 -.->|<<include>>| INC1
-    UC4 -.->|<<include>>| INC3
-    UC5 -.->|<<include>>| INC1
-    UC5 -.->|<<include>>| INC2
-    UC6 -.->|<<include>>| INC1
-    UC7 -.->|<<include>>| INC1
-    UC8 -.->|<<include>>| INC1
-    UC9 -.->|<<include>>| INC1
-    UC10 -.->|<<include>>| INC1
+    UC1 -.->|include| INC1
+    UC2 -.->|include| INC1
+    UC3 -.->|include| INC1
+    UC4 -.->|include| INC1
+    UC5 -.->|include| INC1
+    UC6 -.->|include| INC1
     
-    EXT1 -.->|<<extend>>| UC5
-    EXT2 -.->|<<extend>>| UC4
-    EXT3 -.->|<<extend>>| UC3
-    EXT4 -.->|<<extend>>| UC4
+    EXT1 -.->|extend| UC4
+    EXT2 -.->|extend| UC3
     
     style System fill:#f9fafb,stroke:#374151,stroke-width:3px
     style User fill:#e1f5ff,stroke:#0369a1,stroke-width:2px
     style Admin fill:#fff4e1,stroke:#d97706,stroke-width:2px
     style SuperAdmin fill:#ffe1e1,stroke:#dc2626,stroke-width:2px
-    style INC1 fill:#f0f9ff,stroke:#0ea5e9,stroke-width:2px
-    style INC2 fill:#f0f9ff,stroke:#0ea5e9,stroke-width:2px
-    style INC3 fill:#f0f9ff,stroke:#0ea5e9,stroke-width:2px
-    style EXT1 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
-    style EXT2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
-    style EXT3 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
-    style EXT4 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
 ```
 
 ### UML Діаграма класів
