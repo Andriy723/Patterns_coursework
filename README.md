@@ -40,12 +40,17 @@
 - Управління рухом товарів (надходження, відвантаження, списання)
 - Перегляд постачальників
 - Перегляд статистики складу
+- Створення та управління накладними та актами
+- Перегляд документів
 
 #### 👑 SUPER_ADMIN (Супер Адміністратор)
 - Весь функціонал ADMIN
 - Управління адміністраторами (створення, деактивація, активація)
 - Управління користувачами
-- Управління постачальниками (CRUD)
+- Управління постачальниками (CRUD, видалення)
+- Управління контрагентами (CRUD)
+- Створення та управління накладними та актами
+- Підтвердження та скасування документів
 - Генерація звітів:
   - Статус складу на дату
   - Динаміка руху товарів
@@ -59,6 +64,8 @@
 - ✅ Автоматичні сповіщення про низький запас
 - ✅ Генерація звітів
 - ✅ Облік постачальників та контрагентів
+- ✅ Формування накладних та актів
+- ✅ Зв'язок постачальників з контрагентами
 - ✅ Рольова система доступу
 
 ## 🏗 Архітектура
@@ -267,11 +274,16 @@ Patterns_coursework/
 │   │   │   ├── products.ts       # CRUD товарів
 │   │   │   ├── suppliers.ts     # CRUD постачальників
 │   │   │   ├── warehouse.ts      # Операції зі складом
+│   │   │   ├── documents.ts      # CRUD документів (накладні, акти)
+│   │   │   ├── counterparties.ts # CRUD контрагентів
 │   │   │   └── reports.ts        # Генерація звітів
 │   │   ├── services/
 │   │   │   ├── productService.ts
 │   │   │   ├── warehouseService.ts
-│   │   │   └── notificationService.ts
+│   │   │   ├── notificationService.ts
+│   │   │   ├── documentService.ts
+│   │   │   ├── counterpartyService.ts
+│   │   │   └── supplierService.ts
 │   │   ├── patterns/
 │   │   │   ├── observer.ts       # Observer Pattern
 │   │   │   ├── singleton.ts      # Singleton Pattern
@@ -296,6 +308,8 @@ Patterns_coursework/
     │       ├── page.tsx           # Admin dashboard
     │       ├── products/          # Управління товарами
     │       ├── suppliers/         # Управління постачальниками
+    │       ├── documents/        # Управління накладними та актами
+    │       ├── counterparties/    # Управління контрагентами
     │       ├── warehouse/          # Управління складом
     │       ├── admins/            # Управління адмінами
     │       ├── users/             # Управління користувачами
@@ -331,6 +345,8 @@ graph TB
     Admin --> UC5[Управління рухом товарів]
     Admin --> UC6[Перегляд постачальників]
     Admin --> UC7[Перегляд статистики]
+    Admin --> UC12[Створення накладних та актів]
+    Admin --> UC13[Перегляд документів]
     
     SuperAdmin --> UC4
     SuperAdmin --> UC5
@@ -340,6 +356,30 @@ graph TB
     SuperAdmin --> UC9[Управління користувачами]
     SuperAdmin --> UC10[Управління постачальниками]
     SuperAdmin --> UC11[Генерація звітів]
+    SuperAdmin --> UC12
+    SuperAdmin --> UC13
+    SuperAdmin --> UC14[Управління контрагентами]
+    SuperAdmin --> UC15[Підтвердження документів]
+    SuperAdmin --> UC16[Скасування документів]
+    SuperAdmin --> UC17[Видалення постачальників]
+    
+    UC1 -.->|<<include>>| UC18[Автентифікуватися]
+    UC2 -.->|<<include>>| UC18
+    UC3 -.->|<<include>>| UC18
+    UC4 -.->|<<include>>| UC18
+    UC5 -.->|<<include>>| UC18
+    UC6 -.->|<<include>>| UC18
+    UC7 -.->|<<include>>| UC18
+    UC8 -.->|<<include>>| UC18
+    UC9 -.->|<<include>>| UC18
+    UC10 -.->|<<include>>| UC18
+    UC11 -.->|<<include>>| UC18
+    UC12 -.->|<<include>>| UC18
+    UC13 -.->|<<include>>| UC18
+    UC14 -.->|<<include>>| UC18
+    UC15 -.->|<<include>>| UC18
+    UC16 -.->|<<include>>| UC18
+    UC17 -.->|<<include>>| UC18
     
     UC4 --> UC4a[Створення товару]
     UC4 --> UC4b[Редагування товару]
@@ -354,9 +394,45 @@ graph TB
     UC11 --> UC11b[Звіт про динаміку руху]
     UC11 --> UC11c[Фінансовий звіт]
     
+    UC12 --> UC12a[Створити накладну]
+    UC12 --> UC12b[Створити акт]
+    UC12 -.->|<<include>>| UC19[Вибрати контрагента]
+    UC12 -.->|<<include>>| UC20[Вибрати постачальника]
+    UC12 -.->|<<include>>| UC21[Додати позиції документа]
+    UC22[Згенерувати номер документа] -.->|<<extend>>| UC12
+    
+    UC23[Перевірити залишки товарів] -.->|<<extend>>| UC15
+    UC15 -.->|<<include>>| UC24[Створити рухи товарів]
+    
+    UC25[Перевірити унікальність артикулу] -.->|<<extend>>| UC4a
+    UC25 -.->|<<extend>>| UC4b
+    UC26[Перевірити наявність товару] -.->|<<extend>>| UC4c
+    
+    UC10 --> UC10a[Створити постачальника]
+    UC10 --> UC10b[Редагувати постачальника]
+    UC10 --> UC10c[Видалити постачальника]
+    UC10 --> UC10d[Перегляд постачальників]
+    UC27[Вибрати контрагента] -.->|<<extend>>| UC10a
+    UC27 -.->|<<extend>>| UC10b
+    
+    UC14 --> UC14a[Створити контрагента]
+    UC14 --> UC14b[Редагувати контрагента]
+    UC14 --> UC14c[Видалити контрагента]
+    UC14 --> UC14d[Перегляд контрагентів]
+    
     style User fill:#e1f5ff
     style Admin fill:#fff4e1
     style SuperAdmin fill:#ffe1e1
+    style UC18 fill:#f0f0f0
+    style UC19 fill:#f0f0f0
+    style UC20 fill:#f0f0f0
+    style UC21 fill:#f0f0f0
+    style UC22 fill:#fff9e6
+    style UC23 fill:#fff9e6
+    style UC24 fill:#f0f0f0
+    style UC25 fill:#fff9e6
+    style UC26 fill:#fff9e6
+    style UC27 fill:#fff9e6
 ```
 
 ### UML Діаграма класів
