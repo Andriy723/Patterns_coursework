@@ -399,131 +399,105 @@ graph TB
 ```mermaid
 classDiagram
     class Product {
-        -string id
-        -string name
-        -string article
-        -number quantity
-        -number price
-        -string supplierId
-        -number minStock
-        -Date createdAt
-        -Date updatedAt
-        +getId() string
-        +getName() string
-        +getQuantity() number
-        +updateQuantity(quantity) void
-        +checkLowStock() boolean
+        +string id
+        +string name
+        +string article
+        +number quantity
+        +number price
+        +string supplierId
+        +number minStock
+        +Date createdAt
+        +Date updatedAt
     }
     
     class Supplier {
-        -string id
-        -string name
-        -string phone
-        -string email
-        -string address
-        -string counterpartyId
-        -Date createdAt
-        -Date updatedAt
-        +getId() string
-        +getName() string
-        +getCounterpartyId() string
+        +string id
+        +string counterpartyId
+        +string name
+        +string phone
+        +string email
+        +string address
+        +Date createdAt
+        +Date updatedAt
     }
     
     class Counterparty {
-        -string id
-        -string name
-        -string phone
-        -string email
-        -string address
-        -string type
-        -Date createdAt
-        -Date updatedAt
-        +getId() string
-        +getName() string
-        +getType() string
+        +string id
+        +string name
+        +string phone
+        +string email
+        +string address
+        +string taxId
+        +string type
+        +Date createdAt
+        +Date updatedAt
     }
     
     class Document {
-        -string id
-        -string documentNumber
-        -string type
-        -Date documentDate
-        -string supplierId
-        -string counterpartyId
-        -number totalAmount
-        -string status
-        -Date createdAt
-        +getId() string
-        +getDocumentNumber() string
-        +getStatus() string
-        +confirm() void
-        +cancel() void
-        +calculateTotal() number
+        +string id
+        +string documentNumber
+        +string type
+        +Date documentDate
+        +string supplierId
+        +string counterpartyId
+        +number totalAmount
+        +string status
+        +string createdBy
+        +Date createdAt
+        +Date updatedAt
     }
     
     class DocumentItem {
-        -string id
-        -string documentId
-        -string productId
-        -number quantity
-        -number price
-        -number total
-        -Date createdAt
-        +getId() string
-        +getQuantity() number
-        +getPrice() number
-        +calculateTotal() number
+        +string id
+        +string documentId
+        +string productId
+        +number quantity
+        +number price
+        +number total
+        +string notes
+        +Date createdAt
     }
     
     class WarehouseMovement {
-        -string id
-        -string productId
-        -string type
-        -number quantity
-        -Date date
-        -string documentNumber
-        -Date createdAt
-        +getId() string
-        +getType() string
-        +getQuantity() number
-        +record() void
+        +string id
+        +string productId
+        +string type
+        +number quantity
+        +Date date
+        +string documentNumber
+        +string notes
+        +Date createdAt
     }
     
     class StockAlert {
-        -string id
-        -string productId
-        -string message
-        -boolean isRead
-        -Date createdAt
-        +getId() string
-        +getMessage() string
-        +markAsRead() void
+        +string id
+        +string productId
+        +string message
+        +boolean isRead
+        +Date createdAt
     }
     
     class User {
-        -string id
-        -string email
-        -string password
-        -string name
-        -string role
-        -boolean isActive
-        -Date createdAt
-        +getId() string
-        +getEmail() string
-        +getRole() string
-        +isActive() boolean
+        +string id
+        +string email
+        +string password
+        +string name
+        +string role
+        +boolean isActive
+        +Date createdAt
+        +Date updatedAt
     }
     
-    Product "1" --> "*" WarehouseMovement : створює
-    Product "1" --> "*" StockAlert : генерує
-    Product "*" o-- "0..1" Supplier : має
-    Supplier "*" o-- "0..1" Counterparty : належить
-    Document "1" *-- "*" DocumentItem : містить
-    Document "*" --> "0..1" Supplier : посилається
-    Document "*" --> "0..1" Counterparty : посилається
-    Document "1" --> "*" WarehouseMovement : створює
-    DocumentItem "*" --> "1" Product : посилається
-    WarehouseMovement "*" --> "1" Product : посилається
+    Product "*" o-- "0..1" Supplier : supplierId
+    Supplier "*" o-- "0..1" Counterparty : counterpartyId
+    Document "1" *-- "*" DocumentItem : композиція
+    Document "*" --> "0..1" Supplier : supplierId
+    Document "*" --> "0..1" Counterparty : counterpartyId
+    Document "*" --> "0..1" User : createdBy
+    DocumentItem "*" --> "1" Product : productId
+    Product "1" --> "*" WarehouseMovement : productId
+    Product "1" --> "*" StockAlert : productId
+    Document "1" --> "*" WarehouseMovement : documentNumber
 ```
 
 ## 📝 Примітки
