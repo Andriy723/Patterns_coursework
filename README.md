@@ -329,110 +329,86 @@ Patterns_coursework/
 ### Use Cases Діаграма
 
 ```mermaid
-graph TB
-    User[👤 Користувач]
-    Admin[👨‍💼 Адміністратор]
-    SuperAdmin[👑 Супер Адміністратор]
+graph TD
+    subgraph Actors[" "]
+        User[👤 Користувач]
+        Admin[👨‍💼 Адміністратор]
+        SuperAdmin[👑 Супер Адміністратор]
+    end
     
-    User --> UC1[Перегляд товарів]
-    User --> UC2[Перегляд залишків]
-    User --> UC3[Перегляд статусу складу]
+    subgraph UserCases["Основні Use Cases"]
+        UC1[Перегляд товарів]
+        UC2[Перегляд залишків складу]
+        UC3[Управління товарами]
+        UC4[Управління рухом товарів]
+        UC5[Створення накладних та актів]
+        UC6[Управління постачальниками]
+        UC7[Управління контрагентами]
+        UC8[Генерація звітів]
+        UC9[Управління користувачами]
+        UC10[Управління адміністраторами]
+    end
+    
+    subgraph IncludeCases["Include Use Cases"]
+        INC1[Автентифікуватися]
+        INC2[Валідувати дані]
+        INC3[Створити рухи товарів]
+    end
+    
+    subgraph ExtendCases["Extend Use Cases"]
+        EXT1[Згенерувати номер документа]
+        EXT2[Перевірити залишки товарів]
+        EXT3[Перевірити унікальність артикулу]
+        EXT4[Сповістити про низький запас]
+    end
+    
+    User --> UC1
+    User --> UC2
     
     Admin --> UC1
     Admin --> UC2
     Admin --> UC3
-    Admin --> UC4[Управління товарами]
-    Admin --> UC5[Управління рухом товарів]
-    Admin --> UC6[Перегляд постачальників]
-    Admin --> UC7[Перегляд статистики]
-    Admin --> UC12[Створення накладних та актів]
-    Admin --> UC13[Перегляд документів]
+    Admin --> UC4
+    Admin --> UC5
     
+    SuperAdmin --> UC3
     SuperAdmin --> UC4
     SuperAdmin --> UC5
     SuperAdmin --> UC6
     SuperAdmin --> UC7
-    SuperAdmin --> UC8[Управління адміністраторами]
-    SuperAdmin --> UC9[Управління користувачами]
-    SuperAdmin --> UC10[Управління постачальниками]
-    SuperAdmin --> UC11[Генерація звітів]
-    SuperAdmin --> UC12
-    SuperAdmin --> UC13
-    SuperAdmin --> UC14[Управління контрагентами]
-    SuperAdmin --> UC15[Підтвердження документів]
-    SuperAdmin --> UC16[Скасування документів]
-    SuperAdmin --> UC17[Видалення постачальників]
+    SuperAdmin --> UC8
+    SuperAdmin --> UC9
+    SuperAdmin --> UC10
     
-    UC1 -.->|<<include>>| UC18[Автентифікуватися]
-    UC2 -.->|<<include>>| UC18
-    UC3 -.->|<<include>>| UC18
-    UC4 -.->|<<include>>| UC18
-    UC5 -.->|<<include>>| UC18
-    UC6 -.->|<<include>>| UC18
-    UC7 -.->|<<include>>| UC18
-    UC8 -.->|<<include>>| UC18
-    UC9 -.->|<<include>>| UC18
-    UC10 -.->|<<include>>| UC18
-    UC11 -.->|<<include>>| UC18
-    UC12 -.->|<<include>>| UC18
-    UC13 -.->|<<include>>| UC18
-    UC14 -.->|<<include>>| UC18
-    UC15 -.->|<<include>>| UC18
-    UC16 -.->|<<include>>| UC18
-    UC17 -.->|<<include>>| UC18
+    UC1 -.->|<<include>>| INC1
+    UC2 -.->|<<include>>| INC1
+    UC3 -.->|<<include>>| INC1
+    UC3 -.->|<<include>>| INC2
+    UC4 -.->|<<include>>| INC1
+    UC4 -.->|<<include>>| INC3
+    UC5 -.->|<<include>>| INC1
+    UC5 -.->|<<include>>| INC2
+    UC6 -.->|<<include>>| INC1
+    UC7 -.->|<<include>>| INC1
+    UC8 -.->|<<include>>| INC1
+    UC9 -.->|<<include>>| INC1
+    UC10 -.->|<<include>>| INC1
     
-    UC4 --> UC4a[Створення товару]
-    UC4 --> UC4b[Редагування товару]
-    UC4 --> UC4c[Видалення товару]
-    UC4 --> UC4d[Перегляд товарів]
+    EXT1 -.->|<<extend>>| UC5
+    EXT2 -.->|<<extend>>| UC4
+    EXT3 -.->|<<extend>>| UC3
+    EXT4 -.->|<<extend>>| UC4
     
-    UC5 --> UC5a[Надходження товару]
-    UC5 --> UC5b[Відвантаження товару]
-    UC5 --> UC5c[Списання товару]
-    
-    UC11 --> UC11a[Звіт про статус складу]
-    UC11 --> UC11b[Звіт про динаміку руху]
-    UC11 --> UC11c[Фінансовий звіт]
-    
-    UC12 --> UC12a[Створити накладну]
-    UC12 --> UC12b[Створити акт]
-    UC12 -.->|<<include>>| UC19[Вибрати контрагента]
-    UC12 -.->|<<include>>| UC20[Вибрати постачальника]
-    UC12 -.->|<<include>>| UC21[Додати позиції документа]
-    UC22[Згенерувати номер документа] -.->|<<extend>>| UC12
-    
-    UC23[Перевірити залишки товарів] -.->|<<extend>>| UC15
-    UC15 -.->|<<include>>| UC24[Створити рухи товарів]
-    
-    UC25[Перевірити унікальність артикулу] -.->|<<extend>>| UC4a
-    UC25 -.->|<<extend>>| UC4b
-    UC26[Перевірити наявність товару] -.->|<<extend>>| UC4c
-    
-    UC10 --> UC10a[Створити постачальника]
-    UC10 --> UC10b[Редагувати постачальника]
-    UC10 --> UC10c[Видалити постачальника]
-    UC10 --> UC10d[Перегляд постачальників]
-    UC27[Вибрати контрагента] -.->|<<extend>>| UC10a
-    UC27 -.->|<<extend>>| UC10b
-    
-    UC14 --> UC14a[Створити контрагента]
-    UC14 --> UC14b[Редагувати контрагента]
-    UC14 --> UC14c[Видалити контрагента]
-    UC14 --> UC14d[Перегляд контрагентів]
-    
-    style User fill:#e1f5ff
-    style Admin fill:#fff4e1
-    style SuperAdmin fill:#ffe1e1
-    style UC18 fill:#f0f0f0
-    style UC19 fill:#f0f0f0
-    style UC20 fill:#f0f0f0
-    style UC21 fill:#f0f0f0
-    style UC22 fill:#fff9e6
-    style UC23 fill:#fff9e6
-    style UC24 fill:#f0f0f0
-    style UC25 fill:#fff9e6
-    style UC26 fill:#fff9e6
-    style UC27 fill:#fff9e6
+    style User fill:#e1f5ff,stroke:#0369a1,stroke-width:2px
+    style Admin fill:#fff4e1,stroke:#d97706,stroke-width:2px
+    style SuperAdmin fill:#ffe1e1,stroke:#dc2626,stroke-width:2px
+    style INC1 fill:#f0f9ff,stroke:#0ea5e9,stroke-width:2px,stroke-dasharray: 5 5
+    style INC2 fill:#f0f9ff,stroke:#0ea5e9,stroke-width:2px,stroke-dasharray: 5 5
+    style INC3 fill:#f0f9ff,stroke:#0ea5e9,stroke-width:2px,stroke-dasharray: 5 5
+    style EXT1 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,stroke-dasharray: 3 3
+    style EXT2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,stroke-dasharray: 3 3
+    style EXT3 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,stroke-dasharray: 3 3
+    style EXT4 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,stroke-dasharray: 3 3
 ```
 
 ### UML Діаграма класів
