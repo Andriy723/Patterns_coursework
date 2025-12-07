@@ -6,6 +6,8 @@ import productRoutes from './api/products';
 import supplierRoutes from './api/suppliers';
 import warehouseRoutes from './api/warehouse';
 import reportRoutes from './api/reports';
+import documentRoutes from './api/documents';
+import counterpartyRoutes from './api/counterparties';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -69,6 +71,8 @@ app.use('/api/products', authMiddleware, productRoutes);
 app.use('/api/suppliers', authMiddleware, supplierRoutes);
 app.use('/api/warehouse', authMiddleware, warehouseRoutes);
 app.use('/api/reports', authMiddleware, reportRoutes);
+app.use('/api/documents', authMiddleware, documentRoutes);
+app.use('/api/counterparties', counterpartyRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });

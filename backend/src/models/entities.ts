@@ -12,12 +12,14 @@ export interface Product {
 
 export interface Supplier {
     id: string;
+    counterpartyId?: string;
     name: string;
     phone: string;
     email: string;
     address: string;
     createdAt: Date;
     updatedAt: Date;
+    counterparty?: Counterparty;
 }
 
 export interface WarehouseMovement {
@@ -64,4 +66,51 @@ export interface User {
     createdAt: Date;
     updatedAt: Date;
     isActive: boolean;
+}
+
+export interface DocumentItem {
+    id: string;
+    documentId: string;
+    productId: string;
+    quantity: number;
+    price: number;
+    total: number;
+    notes?: string;
+    createdAt: Date;
+    product?: Product;
+}
+
+export interface Counterparty {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    taxId?: string;
+    notes?: string;
+    type?: 'SUPPLIER' | 'CLIENT' | 'PARTNER' | 'OTHER';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Document {
+    id: string;
+    documentNumber: string;
+    type: 'INVOICE' | 'ACT';
+    documentDate: Date;
+    supplierId?: string;
+    counterpartyId?: string;
+    counterpartyName?: string;
+    counterpartyPhone?: string;
+    counterpartyEmail?: string;
+    counterpartyAddress?: string;
+    totalAmount: number;
+    notes?: string;
+    status: 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+    createdBy?: string;
+    createdAt: Date;
+    updatedAt: Date;
+    items?: DocumentItem[];
+    supplier?: Supplier;
+    counterparty?: Counterparty;
 }

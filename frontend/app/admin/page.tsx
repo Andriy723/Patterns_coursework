@@ -5,14 +5,17 @@ import axios from 'axios';
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState<any>(null);
+    const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const email = typeof window !== 'undefined' ? localStorage.getItem('adminEmail') : null;
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
         setIsSuperAdmin(role === 'SUPER_ADMIN');
+        setIsAdmin(role === 'ADMIN' || role === 'SUPER_ADMIN');
         fetchStats();
     }, []);
 
@@ -28,6 +31,7 @@ export default function AdminDashboardPage() {
             });
 
             setStats(response.data?.stats);
+            setLowStockProducts(response.data?.lowStockItems || []);
             await new Promise(resolve => setTimeout(resolve, 300));
         } catch (err: any) {
             console.error('Error fetching stats:', err);
@@ -144,68 +148,207 @@ export default function AdminDashboardPage() {
                 </div>
             )}
 
+            {stats && (
+                <div style={{ marginTop: '40px' }}>
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        padding: '24px',
+                        borderRadius: '12px',
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                    }}>
+                        <h2 style={{
+                            margin: '0 0 16px 0',
+                            fontSize: '18px',
+                            fontWeight: '700',
+                            color: '#111827',
+                        }}>
+                            ⚠️ Товари з низьким запасом
+                        </h2>
+                        {lowStockProducts.length > 0 ? (
+                            <div style={{ display: 'grid', gap: '12px' }}>
+                                {lowStockProducts.map((product) => (
+                                    <div key={product.id} style={{
+                                        padding: '12px',
+                                        backgroundColor: '#fef3c7',
+                                        borderLeft: '4px solid #f59e0b',
+                                        borderRadius: '8px',
+                                    }}>
+                                        <p style={{
+                                            margin: '0 0 4px 0',
+                                            fontWeight: '600',
+                                            color: '#92400e',
+                                        }}>
+                                            {product.name}
+                                        </p>
+                                        <p style={{
+                                            margin: '0 0 4px 0',
+                                            fontSize: '13px',
+                                            color: '#92400e',
+                                        }}>
+                                            Наявно: {product.quantity} од. (мінімум: {product.minStock})
+                                        </p>
+                                        <p style={{
+                                            margin: 0,
+                                            fontSize: '12px',
+                                            color: '#92400e',
+                                            fontFamily: 'monospace',
+                                        }}>
+                                            {product.article}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ color: '#6b7280', margin: 0 }}>Всі товари у нормі ✅</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#f0f9ff', borderRadius: '12px', border: '1px solid #e0f2fe' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700', color: '#0369a1' }}>
-                    📚 Швидкі посилання
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>📚</span> Швидкі посилання
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
                     <a href="/admin/products" style={{
-                        padding: '12px',
+                        padding: '16px 12px',
                         backgroundColor: '#3b82f6',
                         color: 'white',
                         textDecoration: 'none',
-                        borderRadius: '8px',
                         textAlign: 'center',
                         fontWeight: '600',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                    }}>
-                        📋 Управління товарами
+                        gap: '8px',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                    }}
+                    >
+                        <span style={{ fontSize: '24px' }}>📋</span>
+                        <span style={{ fontSize: '14px' }}>Товари</span>
                     </a>
                     <a href="/admin/suppliers" style={{
-                        padding: '12px',
+                        padding: '16px 12px',
                         backgroundColor: '#10b981',
                         color: 'white',
                         textDecoration: 'none',
-                        borderRadius: '8px',
                         textAlign: 'center',
                         fontWeight: '600',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                    }}>
-                        🚚 Управління постачальниками
+                        gap: '8px',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                    }}
+                    >
+                        <span style={{ fontSize: '24px' }}>🚚</span>
+                        <span style={{ fontSize: '14px' }}>Постачальники</span>
                     </a>
+                    {isAdmin && (
+                        <a href="/admin/documents" style={{
+                            padding: '16px 12px',
+                            backgroundColor: '#ec4899',
+                            color: 'white',
+                            textDecoration: 'none',
+                            textAlign: 'center',
+                            fontWeight: '600',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            transition: 'transform 0.2s, box-shadow 0.2s',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                        }}
+                        >
+                            <span style={{ fontSize: '24px' }}>📄</span>
+                            <span style={{ fontSize: '14px' }}>Документи</span>
+                        </a>
+                    )}
                     {isSuperAdmin && (
                         <>
                             <a href="/admin/reports" style={{
-                                padding: '12px',
+                                padding: '16px 12px',
                                 backgroundColor: '#f59e0b',
                                 color: 'white',
                                 textDecoration: 'none',
-                                borderRadius: '8px',
                                 textAlign: 'center',
                                 fontWeight: '600',
                                 display: 'flex',
+                                flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                            }}>
-                                📈 Переглянути звіти
+                                gap: '8px',
+                                transition: 'transform 0.2s, box-shadow 0.2s',
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                            }}
+                            >
+                                <span style={{ fontSize: '24px' }}>📈</span>
+                                <span style={{ fontSize: '14px' }}>Звіти</span>
                             </a>
                             <a href="/admin/admins" style={{
-                                padding: '12px',
+                                padding: '16px 12px',
                                 backgroundColor: '#8b5cf6',
                                 color: 'white',
                                 textDecoration: 'none',
-                                borderRadius: '8px',
                                 textAlign: 'center',
                                 fontWeight: '600',
                                 display: 'flex',
+                                flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                            }}>
-                                👥 Управління адміністраторами
+                                gap: '8px',
+                                transition: 'transform 0.2s, box-shadow 0.2s',
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                            }}
+                            >
+                                <span style={{ fontSize: '24px' }}>👥</span>
+                                <span style={{ fontSize: '14px' }}>Адміністратори</span>
                             </a>
                         </>
                     )}

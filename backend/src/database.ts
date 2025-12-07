@@ -30,16 +30,89 @@ async function createTables(): Promise<void> {
     const connection = await pool.getConnection();
     try {
         await connection.execute(`
+            CREATE TABLE IF NOT EXISTS counterparties (
+                id VARCHAR(36) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                phone VARCHAR(20),
+                email VARCHAR(255),
+                address VARCHAR(500),
+                taxId VARCHAR(50),
+                notes VARCHAR(1000),
+                type ENUM('SUPPLIER', 'CLIENT', 'PARTNER', 'OTHER') DEFAULT 'OTHER',
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_name (name),
+                INDEX idx_type (type)
+            )
+        `);
+
+        await connection.execute(`
             CREATE TABLE IF NOT EXISTS suppliers (
-                                                     id VARCHAR(36) PRIMARY KEY,
+                id VARCHAR(36) PRIMARY KEY,
+                counterpartyId VARCHAR(36),
                 name VARCHAR(255) NOT NULL,
                 phone VARCHAR(20),
                 email VARCHAR(255),
                 address VARCHAR(500),
                 createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                )
+                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (counterpartyId) REFERENCES counterparties(id) ON DELETE SET NULL,
+                INDEX idx_counterpartyId (counterpartyId)
+            )
         `);
+
+        try {
+            const [columns] = await connection.execute(`
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'suppliers' 
+                AND COLUMN_NAME = 'counterpartyId'
+            `);
+            
+            if ((columns as any[]).length === 0) {
+                console.log('Adding counterpartyId column to suppliers table...');
+                await connection.execute(`
+                    ALTER TABLE suppliers 
+                    ADD COLUMN counterpartyId VARCHAR(36) AFTER id
+                `);
+                try {
+                    await connection.execute(`
+                        ALTER TABLE suppliers 
+                        ADD CONSTRAINT fk_suppliers_counterparty 
+                        FOREIGN KEY (counterpartyId) REFERENCES counterparties(id) ON DELETE SET NULL
+                    `);
+                } catch (fkError: any) {
+                    if (!fkError.message.includes('Duplicate foreign key')) {
+                        console.warn('Could not add foreign key for suppliers.counterpartyId:', fkError.message);
+                    }
+                }
+                console.log('✅ counterpartyId column added to suppliers table');
+            }
+        } catch (error: any) {
+            console.warn('Could not add counterpartyId column to suppliers:', error.message);
+        }
+
+        try {
+            const [columns] = await connection.execute(`
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'counterparties' 
+                AND COLUMN_NAME = 'type'
+            `);
+            
+            if ((columns as any[]).length === 0) {
+                console.log('Adding type column to counterparties table...');
+                await connection.execute(`
+                    ALTER TABLE counterparties 
+                    ADD COLUMN type ENUM('SUPPLIER', 'CLIENT', 'PARTNER', 'OTHER') DEFAULT 'OTHER' AFTER notes
+                `);
+                console.log('✅ type column added to counterparties table');
+            }
+        } catch (error: any) {
+            console.warn('Could not add type column to counterparties:', error.message);
+        }
 
         await connection.execute(`
             CREATE TABLE IF NOT EXISTS products (
@@ -105,6 +178,96 @@ async function createTables(): Promise<void> {
                 isActive BOOLEAN DEFAULT TRUE,
                 createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS counterparties (
+                id VARCHAR(36) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                phone VARCHAR(20),
+                email VARCHAR(255),
+                address VARCHAR(500),
+                taxId VARCHAR(50),
+                notes VARCHAR(1000),
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_name (name)
+            )
+        `);
+
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS documents (
+                id VARCHAR(36) PRIMARY KEY,
+                documentNumber VARCHAR(100) NOT NULL UNIQUE,
+                type ENUM('INVOICE', 'ACT') NOT NULL,
+                documentDate DATETIME NOT NULL,
+                supplierId VARCHAR(36),
+                counterpartyId VARCHAR(36),
+                counterpartyName VARCHAR(255),
+                counterpartyPhone VARCHAR(20),
+                counterpartyEmail VARCHAR(255),
+                counterpartyAddress VARCHAR(500),
+                totalAmount DECIMAL(10, 2) DEFAULT 0,
+                notes VARCHAR(1000),
+                status ENUM('DRAFT', 'CONFIRMED', 'CANCELLED') DEFAULT 'DRAFT',
+                createdBy VARCHAR(36),
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (supplierId) REFERENCES suppliers(id) ON DELETE SET NULL,
+                FOREIGN KEY (counterpartyId) REFERENCES counterparties(id) ON DELETE SET NULL,
+                INDEX idx_documentNumber (documentNumber),
+                INDEX idx_documentDate (documentDate),
+                INDEX idx_type (type)
+            )
+        `);
+
+        try {
+            const [columns] = await connection.execute(`
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'documents' 
+                AND COLUMN_NAME = 'counterpartyId'
+            `);
+            
+            if ((columns as any[]).length === 0) {
+                console.log('Adding counterpartyId column to documents table...');
+                await connection.execute(`
+                    ALTER TABLE documents 
+                    ADD COLUMN counterpartyId VARCHAR(36) AFTER supplierId
+                `);
+                try {
+                    await connection.execute(`
+                        ALTER TABLE documents 
+                        ADD CONSTRAINT fk_documents_counterparty 
+                        FOREIGN KEY (counterpartyId) REFERENCES counterparties(id) ON DELETE SET NULL
+                    `);
+                } catch (fkError: any) {
+                    if (!fkError.message.includes('Duplicate foreign key')) {
+                        console.warn('Could not add foreign key for counterpartyId:', fkError.message);
+                    }
+                }
+                console.log('✅ counterpartyId column added to documents table');
+            }
+        } catch (error: any) {
+            console.warn('Could not add counterpartyId column (might already exist):', error.message);
+        }
+
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS document_items (
+                id VARCHAR(36) PRIMARY KEY,
+                documentId VARCHAR(36) NOT NULL,
+                productId VARCHAR(36) NOT NULL,
+                quantity INT NOT NULL,
+                price DECIMAL(10, 2) NOT NULL,
+                total DECIMAL(10, 2) NOT NULL,
+                notes VARCHAR(500),
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (documentId) REFERENCES documents(id) ON DELETE CASCADE,
+                FOREIGN KEY (productId) REFERENCES products(id) ON DELETE CASCADE,
+                INDEX idx_documentId (documentId),
+                INDEX idx_productId (productId)
             )
         `);
 
