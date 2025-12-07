@@ -398,199 +398,132 @@ graph TB
 
 ```mermaid
 classDiagram
-    %% Entities
     class Product {
-        +string id
-        +string name
-        +string article
-        +number quantity
-        +number price
-        +string supplierId
-        +number minStock
-        +Date createdAt
-        +Date updatedAt
+        -string id
+        -string name
+        -string article
+        -number quantity
+        -number price
+        -string supplierId
+        -number minStock
+        -Date createdAt
+        -Date updatedAt
+        +getId() string
+        +getName() string
+        +getQuantity() number
+        +updateQuantity(quantity) void
+        +checkLowStock() boolean
     }
     
     class Supplier {
-        +string id
-        +string name
-        +string phone
-        +string email
-        +string address
-        +Date createdAt
-        +Date updatedAt
+        -string id
+        -string name
+        -string phone
+        -string email
+        -string address
+        -string counterpartyId
+        -Date createdAt
+        -Date updatedAt
+        +getId() string
+        +getName() string
+        +getCounterpartyId() string
+    }
+    
+    class Counterparty {
+        -string id
+        -string name
+        -string phone
+        -string email
+        -string address
+        -string type
+        -Date createdAt
+        -Date updatedAt
+        +getId() string
+        +getName() string
+        +getType() string
+    }
+    
+    class Document {
+        -string id
+        -string documentNumber
+        -string type
+        -Date documentDate
+        -string supplierId
+        -string counterpartyId
+        -number totalAmount
+        -string status
+        -Date createdAt
+        +getId() string
+        +getDocumentNumber() string
+        +getStatus() string
+        +confirm() void
+        +cancel() void
+        +calculateTotal() number
+    }
+    
+    class DocumentItem {
+        -string id
+        -string documentId
+        -string productId
+        -number quantity
+        -number price
+        -number total
+        -Date createdAt
+        +getId() string
+        +getQuantity() number
+        +getPrice() number
+        +calculateTotal() number
     }
     
     class WarehouseMovement {
-        +string id
-        +string productId
-        +string type
-        +number quantity
-        +Date date
-        +string documentNumber
-        +string notes
-        +Date createdAt
+        -string id
+        -string productId
+        -string type
+        -number quantity
+        -Date date
+        -string documentNumber
+        -Date createdAt
+        +getId() string
+        +getType() string
+        +getQuantity() number
+        +record() void
     }
     
     class StockAlert {
-        +string id
-        +string productId
-        +string message
-        +boolean isRead
-        +Date createdAt
-    }
-    
-    class AdminUser {
-        +string id
-        +string email
-        +string password
-        +string role
-        +boolean isActive
-        +Date createdAt
+        -string id
+        -string productId
+        -string message
+        -boolean isRead
+        -Date createdAt
+        +getId() string
+        +getMessage() string
+        +markAsRead() void
     }
     
     class User {
-        +string id
-        +string email
-        +string password
-        +string name
-        +string role
-        +boolean isActive
-        +Date createdAt
-        +Date updatedAt
+        -string id
+        -string email
+        -string password
+        -string name
+        -string role
+        -boolean isActive
+        -Date createdAt
+        +getId() string
+        +getEmail() string
+        +getRole() string
+        +isActive() boolean
     }
     
-    %% Observer Pattern
-    class StockAlertSubject {
-        -NotificationObserver[] observers
-        +attach(observer)
-        +detach(observer)
-        +notifyAll(alert)
-    }
-    
-    class NotificationObserver {
-        <<interface>>
-        +update(alert)
-    }
-    
-    class DatabaseNotificationObserver {
-        +update(alert)
-    }
-    
-    class LoggerNotificationObserver {
-        +update(alert)
-    }
-    
-    class EmailNotificationObserver {
-        +update(alert)
-    }
-    
-    %% Singleton Pattern
-    class NotificationManager {
-        -static NotificationManager instance
-        -Array subscribers
-        -Map alertCache
-        -constructor()
-        +static getInstance()
-        +subscribe(callback)
-        +unsubscribe(callback)
-        +notify(alert)
-        +getAllAlerts()
-    }
-    
-    %% Strategy Pattern
-    class ReportStrategy {
-        <<interface>>
-        +generate(date)
-    }
-    
-    class WarehouseStatusReportStrategy {
-        +generate(date)
-    }
-    
-    class MovementDynamicsReportStrategy {
-        +generate(date)
-    }
-    
-    class FinancialReportStrategy {
-        +generate(date)
-    }
-    
-    class ReportContext {
-        -ReportStrategy strategy
-        +setStrategy(strategy)
-        +executeReport(date)
-    }
-    
-    %% Factory Pattern
-    class MovementProcessor {
-        <<abstract>>
-        +process(productId, quantity, documentNumber)
-        #createMovement(...)
-    }
-    
-    class IncomeMovementProcessor {
-        +process(productId, quantity, documentNumber)
-    }
-    
-    class OutcomeMovementProcessor {
-        +process(productId, quantity, documentNumber)
-    }
-    
-    class WriteOffMovementProcessor {
-        +process(productId, quantity, documentNumber)
-    }
-    
-    class MovementProcessorFactory {
-        +static createProcessor(type)
-    }
-    
-    %% Services
-    class ProductService {
-        +getAllProducts()
-        +getProduct(id)
-        +createProduct(data)
-        +updateProduct(id, data)
-        +deleteProduct(id)
-    }
-    
-    class WarehouseService {
-        +getWarehouseStatus()
-        +createMovement(type, productId, quantity, documentNumber)
-    }
-    
-    class NotificationService {
-        -StockAlertSubject alertSubject
-        +sendStockAlert(productId, productName, currentStock, minStock)
-        +checkAndNotifyLowStock(productId)
-        +getNotificationManager()
-    }
-    
-    %% Relationships
-    Product "1" --> "*" WarehouseMovement : has
-    Product "1" --> "*" StockAlert : generates
-    Product "*" --> "1" Supplier : belongs to
-    
-    StockAlertSubject "1" --> "*" NotificationObserver : notifies
-    DatabaseNotificationObserver ..|> NotificationObserver : implements
-    LoggerNotificationObserver ..|> NotificationObserver : implements
-    EmailNotificationObserver ..|> NotificationObserver : implements
-    
-    NotificationService --> StockAlertSubject : uses
-    NotificationService --> NotificationManager : uses
-    
-    ReportContext --> ReportStrategy : uses
-    WarehouseStatusReportStrategy ..|> ReportStrategy : implements
-    MovementDynamicsReportStrategy ..|> ReportStrategy : implements
-    FinancialReportStrategy ..|> ReportStrategy : implements
-    
-    MovementProcessorFactory --> MovementProcessor : creates
-    IncomeMovementProcessor --|> MovementProcessor : extends
-    OutcomeMovementProcessor --|> MovementProcessor : extends
-    WriteOffMovementProcessor --|> MovementProcessor : extends
-    
-    WarehouseService --> MovementProcessorFactory : uses
-    ProductService --> NotificationService : uses
+    Product "1" --> "*" WarehouseMovement : створює
+    Product "1" --> "*" StockAlert : генерує
+    Product "*" o-- "0..1" Supplier : має
+    Supplier "*" o-- "0..1" Counterparty : належить
+    Document "1" *-- "*" DocumentItem : містить
+    Document "*" --> "0..1" Supplier : посилається
+    Document "*" --> "0..1" Counterparty : посилається
+    Document "1" --> "*" WarehouseMovement : створює
+    DocumentItem "*" --> "1" Product : посилається
+    WarehouseMovement "*" --> "1" Product : посилається
 ```
 
 ## 📝 Примітки
