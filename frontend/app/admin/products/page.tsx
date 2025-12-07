@@ -24,9 +24,11 @@ export default function AdminProductsPage() {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         const role = localStorage.getItem('adminRole');
+        setIsAdmin(role === 'ADMIN' || role === 'SUPER_ADMIN');
         setIsSuperAdmin(role === 'SUPER_ADMIN');
         fetchData();
     }, []);
@@ -118,7 +120,7 @@ export default function AdminProductsPage() {
                     <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700' }}>
                         📋 Управління товарами
                     </h1>
-                    {isSuperAdmin && (
+                    {isAdmin && (
                         <Link
                             href="/admin/products/create"
                             style={{

@@ -6,8 +6,25 @@ import Link from 'next/link';
 
 function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: string }) {
     const [showMenu, setShowMenu] = useState(false);
+    const [showProductsDropdown, setShowProductsDropdown] = useState(false);
+    const [showDocumentsDropdown, setShowDocumentsDropdown] = useState(false);
+    const [showCounterpartiesDropdown, setShowCounterpartiesDropdown] = useState(false);
     const isSuperAdmin = role === 'SUPER_ADMIN';
     const isAdmin = role === 'ADMIN';
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (!target.closest('[data-dropdown]')) {
+                setShowProductsDropdown(false);
+                setShowDocumentsDropdown(false);
+                setShowCounterpartiesDropdown(false);
+                setShowMenu(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
 
     return (
         <nav style={{
@@ -25,7 +42,7 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                 alignItems: 'center',
                 justifyContent: 'space-between',
             }}>
-                <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <Link href="/admin" style={{
                         textDecoration: 'none',
                         color: '#ffffff',
@@ -34,29 +51,230 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                     }}>
                         🏭 Адмін-панель
                     </Link>
-                    <Link href="/admin/products" style={{
-                        textDecoration: 'none',
-                        color: '#d1d5db',
-                        fontSize: '14px',
-                    }}>
-                        📋 Товари
-                    </Link>
-                    <Link href="/admin/suppliers" style={{
-                        textDecoration: 'none',
-                        color: '#d1d5db',
-                        fontSize: '14px',
-                    }}>
-                        🚚 Постачальники
-                    </Link>
-                    <Link href="/admin/warehouse" style={{
-                        textDecoration: 'none',
-                        color: '#d1d5db',
-                        fontSize: '14px',
-                    }}>
-                        📦 Склад
-                    </Link>
+                    
+                    {/* Дропдаун: Склад та Товари */}
+                    <div style={{ position: 'relative' }} data-dropdown>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const newState = !showProductsDropdown;
+                                setShowProductsDropdown(newState);
+                                if (newState) {
+                                    setShowDocumentsDropdown(false);
+                                    setShowCounterpartiesDropdown(false);
+                                    setShowMenu(false);
+                                }
+                            }}
+                            style={{
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                color: '#d1d5db',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                padding: '4px 8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                            }}
+                        >
+                            📦 Склад
+                            <span style={{ fontSize: '10px' }}>{showProductsDropdown ? '▲' : '▼'}</span>
+                        </button>
+                        {showProductsDropdown && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                marginTop: '4px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e5e7eb',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                zIndex: 1000,
+                                minWidth: '140px',
+                            }}>
+                                <Link href="/admin/products" style={{
+                                    display: 'block',
+                                    padding: '8px 12px',
+                                    textDecoration: 'none',
+                                    color: '#111827',
+                                    fontSize: '13px',
+                                    transition: 'background-color 0.2s',
+                                }}
+                                onClick={() => setShowProductsDropdown(false)}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    📋 Товари
+                                </Link>
+                                <Link href="/admin/warehouse" style={{
+                                    display: 'block',
+                                    padding: '8px 12px',
+                                    textDecoration: 'none',
+                                    color: '#111827',
+                                    fontSize: '13px',
+                                    transition: 'background-color 0.2s',
+                                }}
+                                onClick={() => setShowProductsDropdown(false)}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    📦 Склад
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Дропдаун: Накладні та Акти (для адмінів та супер адмінів) */}
+                    {(isAdmin || isSuperAdmin) && (
+                        <div style={{ position: 'relative' }} data-dropdown>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newState = !showDocumentsDropdown;
+                                    setShowDocumentsDropdown(newState);
+                                    if (newState) {
+                                        setShowProductsDropdown(false);
+                                        setShowCounterpartiesDropdown(false);
+                                        setShowMenu(false);
+                                    }
+                                }}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    border: 'none',
+                                    color: '#d1d5db',
+                                    fontSize: '14px',
+                                    cursor: 'pointer',
+                                    padding: '4px 8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                }}
+                            >
+                                📄 Документи
+                                {isSuperAdmin && ' / Звіти'}
+                                <span style={{ fontSize: '10px' }}>{showDocumentsDropdown ? '▲' : '▼'}</span>
+                            </button>
+                            {showDocumentsDropdown && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: 0,
+                                    marginTop: '4px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #e5e7eb',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                    zIndex: 1000,
+                                    minWidth: '140px',
+                                }}>
+                                    <Link href="/admin/documents" style={{
+                                        display: 'block',
+                                        padding: '8px 12px',
+                                        textDecoration: 'none',
+                                        color: '#111827',
+                                        fontSize: '13px',
+                                        transition: 'background-color 0.2s',
+                                    }}
+                                    onClick={() => setShowDocumentsDropdown(false)}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        📄 Накладні
+                                    </Link>
+                                    {isSuperAdmin && (
+                                        <Link href="/admin/reports" style={{
+                                            display: 'block',
+                                            padding: '8px 12px',
+                                            textDecoration: 'none',
+                                            color: '#111827',
+                                            fontSize: '13px',
+                                            transition: 'background-color 0.2s',
+                                        }}
+                                        onClick={() => setShowDocumentsDropdown(false)}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            📈 Звіти
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {isSuperAdmin && (
                         <>
+                            {/* Дропдаун: Контрагенти та Постачальники */}
+                            <div style={{ position: 'relative' }} data-dropdown>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const newState = !showCounterpartiesDropdown;
+                                        setShowCounterpartiesDropdown(newState);
+                                        if (newState) {
+                                            setShowProductsDropdown(false);
+                                            setShowDocumentsDropdown(false);
+                                            setShowMenu(false);
+                                        }
+                                    }}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        color: '#d1d5db',
+                                        fontSize: '14px',
+                                        cursor: 'pointer',
+                                        padding: '4px 8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                    }}
+                                >
+                                    🤝 Контрагенти
+                                    <span style={{ fontSize: '10px' }}>{showCounterpartiesDropdown ? '▲' : '▼'}</span>
+                                </button>
+                                {showCounterpartiesDropdown && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        marginTop: '4px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #e5e7eb',
+                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                        zIndex: 1000,
+                                        minWidth: '160px',
+                                    }}>
+                                        <Link href="/admin/counterparties" style={{
+                                            display: 'block',
+                                            padding: '8px 12px',
+                                            textDecoration: 'none',
+                                            color: '#111827',
+                                            fontSize: '13px',
+                                            transition: 'background-color 0.2s',
+                                        }}
+                                        onClick={() => setShowCounterpartiesDropdown(false)}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            🤝 Контрагенти
+                                        </Link>
+                                        <Link href="/admin/suppliers" style={{
+                                            display: 'block',
+                                            padding: '8px 12px',
+                                            textDecoration: 'none',
+                                            color: '#111827',
+                                            fontSize: '13px',
+                                            transition: 'background-color 0.2s',
+                                        }}
+                                        onClick={() => setShowCounterpartiesDropdown(false)}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            🚚 Постачальники
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+
                             <Link href="/admin/admins" style={{
                                 textDecoration: 'none',
                                 color: '#d1d5db',
@@ -71,36 +289,39 @@ function AdminNavigation({ onLogout, role }: { onLogout: () => void; role: strin
                             }}>
                                 👤 Користувачі
                             </Link>
-                            <Link href="/admin/reports" style={{
-                                textDecoration: 'none',
-                                color: '#d1d5db',
-                                fontSize: '14px',
-                            }}>
-                                📈 Звіти
-                            </Link>
                         </>
                     )}
                 </div>
 
-                <div style={{ position: 'relative', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ position: 'relative', display: 'flex', gap: '12px', alignItems: 'center' }} data-dropdown>
                     <span style={{
                         padding: '4px 12px',
                         backgroundColor: isSuperAdmin ? '#dc2626' : '#3b82f6',
                         color: 'white',
-                        borderRadius: '4px',
                         fontSize: '11px',
                         fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
                     }}>
-                        {isSuperAdmin ? '👑 СУПЕР АДМІН' : '👤 АДМІН'}
+                        {isSuperAdmin ? '👑' : '👤'} АДМІН
                     </span>
                     <button
-                        onClick={() => setShowMenu(!showMenu)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const newState = !showMenu;
+                            setShowMenu(newState);
+                            if (newState) {
+                                setShowProductsDropdown(false);
+                                setShowDocumentsDropdown(false);
+                                setShowCounterpartiesDropdown(false);
+                            }
+                        }}
                         style={{
                             backgroundColor: '#374151',
                             color: 'white',
                             border: 'none',
                             padding: '8px 12px',
-                            borderRadius: '6px',
                             cursor: 'pointer',
                             fontSize: '12px',
                         }}
@@ -223,6 +444,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 router.replace('/admin');
             }
             
+            
             setIsCheckingAuth(false);
         };
         checkAuth();
@@ -256,15 +478,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (pathname === '/admin/login') {
         return children;
-    }
-
-    if(!isAuthenticated && pathname.includes('/admin/admins') && typeof window!=='undefined') {
-        const role = localStorage.getItem('adminRole');
-        return <div style={{padding:36,background:'#e0f2fe',margin:40,border:'1px solid #bae6fd',borderRadius:10}}>
-          <strong>Увага!</strong><br/>
-          Лише SUPER_ADMIN має доступ до цієї сторінки.<br/>
-          Зараз ваша роль: <code>{role ? role : 'не вказано'}</code>
-        </div>;
     }
 
     return (

@@ -26,8 +26,9 @@ export default function AdminProductCreatePage() {
 
     useEffect(() => {
         const token = localStorage.getItem('adminToken');
-        if (!token) {
-            router.replace('/admin/login');
+        const role = localStorage.getItem('adminRole');
+        if (!token || (role !== 'ADMIN' && role !== 'SUPER_ADMIN')) {
+            router.replace('/admin');
             return;
         }
         fetchSuppliers();
