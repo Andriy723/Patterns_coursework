@@ -337,11 +337,15 @@ graph TB
     subgraph System["Система складського обліку"]
         direction TB
         UC1(Перегляд товарів)
-        UC2(Управління товарами)
-        UC3(Управління рухом товарів)
-        UC4(Створення накладних та актів)
-        UC5(Управління постачальниками)
-        UC6(Генерація звітів)
+        UC2(Перегляд залишків складу)
+        UC3(Управління товарами)
+        UC4(Управління рухом товарів)
+        UC5(Створення накладних та актів)
+        UC6(Управління постачальниками)
+        UC7(Управління контрагентами)
+        UC8(Генерація звітів)
+        UC9(Управління користувачами)
+        UC10(Управління адміністраторами)
         
         INC1(Автентифікуватися)
         
@@ -350,17 +354,22 @@ graph TB
     end
     
     User --> UC1
+    User --> UC2
     
     Admin --> UC1
     Admin --> UC2
     Admin --> UC3
     Admin --> UC4
+    Admin --> UC5
     
-    SuperAdmin --> UC2
     SuperAdmin --> UC3
     SuperAdmin --> UC4
     SuperAdmin --> UC5
     SuperAdmin --> UC6
+    SuperAdmin --> UC7
+    SuperAdmin --> UC8
+    SuperAdmin --> UC9
+    SuperAdmin --> UC10
     
     UC1 -.->|include| INC1
     UC2 -.->|include| INC1
@@ -368,9 +377,13 @@ graph TB
     UC4 -.->|include| INC1
     UC5 -.->|include| INC1
     UC6 -.->|include| INC1
+    UC7 -.->|include| INC1
+    UC8 -.->|include| INC1
+    UC9 -.->|include| INC1
+    UC10 -.->|include| INC1
     
-    EXT1 -.->|extend| UC4
-    EXT2 -.->|extend| UC3
+    EXT1 -.->|extend| UC5
+    EXT2 -.->|extend| UC4
     
     style System fill:#f9fafb,stroke:#374151,stroke-width:3px
     style User fill:#e1f5ff,stroke:#0369a1,stroke-width:2px
