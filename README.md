@@ -399,151 +399,119 @@ graph TB
 ```plantuml
 @startuml
 
-package "Entities" {
-    class Product {
-        - id: String
-        - name: String
-        - article: String
-        - quantity: Number
-        - price: Number
-        - supplierId: String
-        - minStock: Number
-        - createdAt: Date
-        - updatedAt: Date
-    }
-    
-    class Supplier {
-        - id: String
-        - counterpartyId: String
-        - name: String
-        - phone: String
-        - email: String
-        - address: String
-        - createdAt: Date
-        - updatedAt: Date
-    }
-    
-    class Counterparty {
-        - id: String
-        - name: String
-        - phone: String
-        - email: String
-        - address: String
-        - taxId: String
-        - type: String
-        - createdAt: Date
-        - updatedAt: Date
-    }
-    
-    class Document {
-        - id: String
-        - documentNumber: String
-        - type: String
-        - documentDate: Date
-        - supplierId: String
-        - counterpartyId: String
-        - totalAmount: Number
-        - status: String
-        - createdBy: String
-        - createdAt: Date
-        - updatedAt: Date
-    }
-    
-    class DocumentItem {
-        - id: String
-        - documentId: String
-        - productId: String
-        - quantity: Number
-        - price: Number
-        - total: Number
-        - notes: String
-        - createdAt: Date
-    }
-    
-    class WarehouseMovement {
-        - id: String
-        - productId: String
-        - type: String
-        - quantity: Number
-        - date: Date
-        - documentNumber: String
-        - notes: String
-        - createdAt: Date
-    }
-    
-    class StockAlert {
-        - id: String
-        - productId: String
-        - message: String
-        - isRead: Boolean
-        - createdAt: Date
-    }
-    
-    class User {
-        - id: String
-        - email: String
-        - password: String
-        - name: String
-        - role: String
-        - isActive: Boolean
-        - createdAt: Date
-        - updatedAt: Date
-    }
+class Product {
+    - id: String
+    - name: String
+    - article: String
+    - quantity: Number
+    - price: Number
+    - supplierId: String
+    - minStock: Number
+    - createdAt: Date
+    - updatedAt: Date
+    + updateQuantity(amount: Number): void
+    + checkLowStock(): Boolean
+    + calculateTotalValue(): Number
+    + isAvailable(requiredQuantity: Number): Boolean
 }
 
-package "Services" {
-    class ProductService {
-        - notificationService: NotificationService
-        + createProduct(data): Product
-        + getProduct(id): Product
-        + getAllProducts(): Product[]
-        + updateProduct(id, data): Product
-        + deleteProduct(id): Boolean
-        + getLowStockProducts(): Product[]
-        + checkAllLowStock(): void
-        + checkAndNotifyLowStock(productId): void
-    }
-    
-    class SupplierService {
-        + createSupplier(data): Supplier
-        + getSupplier(id): Supplier
-        + getAllSuppliers(): Supplier[]
-        + updateSupplier(id, data): Supplier
-        + deleteSupplier(id): Boolean
-    }
-    
-    class CounterpartyService {
-        + createCounterparty(data): Counterparty
-        + getCounterparty(id): Counterparty
-        + getAllCounterparties(): Counterparty[]
-        + updateCounterparty(id, data): Counterparty
-        + deleteCounterparty(id): void
-    }
-    
-    class DocumentService {
-        - warehouseService: WarehouseService
-        + createDocument(data): Document
-        + getDocument(id): Document
-        + getAllDocuments(filters): Document[]
-        + confirmDocument(id): Document
-        + cancelDocument(id): Document
-    }
-    
-    class WarehouseService {
-        - productService: ProductService
-        + recordMovement(productId, type, quantity, documentNumber): WarehouseMovement
-        + getMovements(limit): WarehouseMovement[]
-        + getMovementsByProduct(productId): WarehouseMovement[]
-        + getWarehouseStatus(): Object
-    }
-    
-    class NotificationService {
-        - alertSubject: StockAlertSubject
-        + sendStockAlert(productId, productName, currentStock, minStock): void
-        + checkAndNotifyLowStock(productId): void
-        + getNotificationManager(): NotificationManager
-        + getAllAlerts(): StockAlert[]
-    }
+class Supplier {
+    - id: String
+    - counterpartyId: String
+    - name: String
+    - phone: String
+    - email: String
+    - address: String
+    - createdAt: Date
+    - updatedAt: Date
+    + getFullInfo(): String
+    + updateContactInfo(phone, email, address): void
+}
+
+class Counterparty {
+    - id: String
+    - name: String
+    - phone: String
+    - email: String
+    - address: String
+    - taxId: String
+    - type: String
+    - createdAt: Date
+    - updatedAt: Date
+    + getFullInfo(): String
+    + validateTaxId(): Boolean
+}
+
+class Document {
+    - id: String
+    - documentNumber: String
+    - type: String
+    - documentDate: Date
+    - supplierId: String
+    - counterpartyId: String
+    - totalAmount: Number
+    - status: String
+    - createdBy: String
+    - createdAt: Date
+    - updatedAt: Date
+    + calculateTotal(): Number
+    + confirm(): void
+    + cancel(): void
+    + addItem(item: DocumentItem): void
+    + removeItem(itemId: String): void
+    + isConfirmed(): Boolean
+}
+
+class DocumentItem {
+    - id: String
+    - documentId: String
+    - productId: String
+    - quantity: Number
+    - price: Number
+    - total: Number
+    - notes: String
+    - createdAt: Date
+    + calculateTotal(): Number
+    + updateQuantity(quantity: Number): void
+    + updatePrice(price: Number): void
+}
+
+class WarehouseMovement {
+    - id: String
+    - productId: String
+    - type: String
+    - quantity: Number
+    - date: Date
+    - documentNumber: String
+    - notes: String
+    - createdAt: Date
+    + execute(): void
+    + getMovementType(): String
+}
+
+class StockAlert {
+    - id: String
+    - productId: String
+    - message: String
+    - isRead: Boolean
+    - createdAt: Date
+    + markAsRead(): void
+    + isUnread(): Boolean
+}
+
+class User {
+    - id: String
+    - email: String
+    - password: String
+    - name: String
+    - role: String
+    - isActive: Boolean
+    - createdAt: Date
+    - updatedAt: Date
+    + authenticate(password: String): Boolean
+    + hasPermission(action: String): Boolean
+    + isAdmin(): Boolean
+    + isSuperAdmin(): Boolean
 }
 
 ' Relationships between entities
@@ -557,19 +525,6 @@ DocumentItem "1..*" --> "1" Product : productId
 Product "1" --> "0..*" WarehouseMovement : productId
 Product "1" --> "0..*" StockAlert : productId
 Document "1" --> "0..*" WarehouseMovement : documentNumber
-
-' Relationships between services and entities
-ProductService ..> Product : manages
-ProductService ..> NotificationService : uses
-SupplierService ..> Supplier : manages
-SupplierService ..> Counterparty : uses
-CounterpartyService ..> Counterparty : manages
-DocumentService ..> Document : manages
-DocumentService ..> DocumentItem : manages
-DocumentService ..> WarehouseService : uses
-WarehouseService ..> WarehouseMovement : creates
-WarehouseService ..> ProductService : uses
-NotificationService ..> StockAlert : creates
 
 @enduml
 ```
