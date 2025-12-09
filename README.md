@@ -488,6 +488,59 @@ classDiagram
         +Date updatedAt
     }
     
+    class ProductService {
+        -NotificationService notificationService
+        +createProduct(data) Product
+        +getProduct(id) Product
+        +getAllProducts() Product[]
+        +updateProduct(id, data) Product
+        +deleteProduct(id) boolean
+        +getLowStockProducts() Product[]
+        +checkAllLowStock() void
+        +checkAndNotifyLowStock(productId) void
+    }
+    
+    class SupplierService {
+        +createSupplier(data) Supplier
+        +getSupplier(id) Supplier
+        +getAllSuppliers() Supplier[]
+        +updateSupplier(id, data) Supplier
+        +deleteSupplier(id) boolean
+    }
+    
+    class CounterpartyService {
+        +createCounterparty(data) Counterparty
+        +getCounterparty(id) Counterparty
+        +getAllCounterparties() Counterparty[]
+        +updateCounterparty(id, data) Counterparty
+        +deleteCounterparty(id) void
+    }
+    
+    class DocumentService {
+        -WarehouseService warehouseService
+        +createDocument(data) Document
+        +getDocument(id) Document
+        +getAllDocuments(filters) Document[]
+        +confirmDocument(id) Document
+        +cancelDocument(id) Document
+    }
+    
+    class WarehouseService {
+        -ProductService productService
+        +recordMovement(productId, type, quantity, documentNumber) WarehouseMovement
+        +getMovements(limit) WarehouseMovement[]
+        +getMovementsByProduct(productId) WarehouseMovement[]
+        +getWarehouseStatus() object
+    }
+    
+    class NotificationService {
+        -StockAlertSubject alertSubject
+        +sendStockAlert(productId, productName, currentStock, minStock) void
+        +checkAndNotifyLowStock(productId) void
+        +getNotificationManager() NotificationManager
+        +getAllAlerts() StockAlert[]
+    }
+    
     Product "*" o-- "0..1" Supplier : supplierId
     Supplier "*" o-- "0..1" Counterparty : counterpartyId
     Document "1" *-- "*" DocumentItem : композиція
@@ -498,6 +551,17 @@ classDiagram
     Product "1" --> "*" WarehouseMovement : productId
     Product "1" --> "*" StockAlert : productId
     Document "1" --> "*" WarehouseMovement : documentNumber
+    
+    ProductService --> Product : управляє
+    ProductService --> NotificationService : використовує
+    SupplierService --> Supplier : управляє
+    SupplierService --> Counterparty : використовує
+    CounterpartyService --> Counterparty : управляє
+    DocumentService --> Document : управляє
+    DocumentService --> WarehouseService : використовує
+    WarehouseService --> WarehouseMovement : створює
+    WarehouseService --> ProductService : використовує
+    NotificationService --> StockAlert : створює
 ```
 
 ## 📝 Примітки
