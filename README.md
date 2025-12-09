@@ -396,172 +396,182 @@ graph TB
 
 ### UML Діаграма класів
 
-```mermaid
-classDiagram
+```plantuml
+@startuml
+
+package "Entities" {
     class Product {
-        +string id
-        +string name
-        +string article
-        +number quantity
-        +number price
-        +string supplierId
-        +number minStock
-        +Date createdAt
-        +Date updatedAt
+        - id: String
+        - name: String
+        - article: String
+        - quantity: Number
+        - price: Number
+        - supplierId: String
+        - minStock: Number
+        - createdAt: Date
+        - updatedAt: Date
     }
     
     class Supplier {
-        +string id
-        +string counterpartyId
-        +string name
-        +string phone
-        +string email
-        +string address
-        +Date createdAt
-        +Date updatedAt
+        - id: String
+        - counterpartyId: String
+        - name: String
+        - phone: String
+        - email: String
+        - address: String
+        - createdAt: Date
+        - updatedAt: Date
     }
     
     class Counterparty {
-        +string id
-        +string name
-        +string phone
-        +string email
-        +string address
-        +string taxId
-        +string type
-        +Date createdAt
-        +Date updatedAt
+        - id: String
+        - name: String
+        - phone: String
+        - email: String
+        - address: String
+        - taxId: String
+        - type: String
+        - createdAt: Date
+        - updatedAt: Date
     }
     
     class Document {
-        +string id
-        +string documentNumber
-        +string type
-        +Date documentDate
-        +string supplierId
-        +string counterpartyId
-        +number totalAmount
-        +string status
-        +string createdBy
-        +Date createdAt
-        +Date updatedAt
+        - id: String
+        - documentNumber: String
+        - type: String
+        - documentDate: Date
+        - supplierId: String
+        - counterpartyId: String
+        - totalAmount: Number
+        - status: String
+        - createdBy: String
+        - createdAt: Date
+        - updatedAt: Date
     }
     
     class DocumentItem {
-        +string id
-        +string documentId
-        +string productId
-        +number quantity
-        +number price
-        +number total
-        +string notes
-        +Date createdAt
+        - id: String
+        - documentId: String
+        - productId: String
+        - quantity: Number
+        - price: Number
+        - total: Number
+        - notes: String
+        - createdAt: Date
     }
     
     class WarehouseMovement {
-        +string id
-        +string productId
-        +string type
-        +number quantity
-        +Date date
-        +string documentNumber
-        +string notes
-        +Date createdAt
+        - id: String
+        - productId: String
+        - type: String
+        - quantity: Number
+        - date: Date
+        - documentNumber: String
+        - notes: String
+        - createdAt: Date
     }
     
     class StockAlert {
-        +string id
-        +string productId
-        +string message
-        +boolean isRead
-        +Date createdAt
+        - id: String
+        - productId: String
+        - message: String
+        - isRead: Boolean
+        - createdAt: Date
     }
     
     class User {
-        +string id
-        +string email
-        +string password
-        +string name
-        +string role
-        +boolean isActive
-        +Date createdAt
-        +Date updatedAt
+        - id: String
+        - email: String
+        - password: String
+        - name: String
+        - role: String
+        - isActive: Boolean
+        - createdAt: Date
+        - updatedAt: Date
     }
-    
+}
+
+package "Services" {
     class ProductService {
-        -NotificationService notificationService
-        +createProduct(data) Product
-        +getProduct(id) Product
-        +getAllProducts() Product[]
-        +updateProduct(id, data) Product
-        +deleteProduct(id) boolean
-        +getLowStockProducts() Product[]
-        +checkAllLowStock() void
-        +checkAndNotifyLowStock(productId) void
+        - notificationService: NotificationService
+        + createProduct(data): Product
+        + getProduct(id): Product
+        + getAllProducts(): Product[]
+        + updateProduct(id, data): Product
+        + deleteProduct(id): Boolean
+        + getLowStockProducts(): Product[]
+        + checkAllLowStock(): void
+        + checkAndNotifyLowStock(productId): void
     }
     
     class SupplierService {
-        +createSupplier(data) Supplier
-        +getSupplier(id) Supplier
-        +getAllSuppliers() Supplier[]
-        +updateSupplier(id, data) Supplier
-        +deleteSupplier(id) boolean
+        + createSupplier(data): Supplier
+        + getSupplier(id): Supplier
+        + getAllSuppliers(): Supplier[]
+        + updateSupplier(id, data): Supplier
+        + deleteSupplier(id): Boolean
     }
     
     class CounterpartyService {
-        +createCounterparty(data) Counterparty
-        +getCounterparty(id) Counterparty
-        +getAllCounterparties() Counterparty[]
-        +updateCounterparty(id, data) Counterparty
-        +deleteCounterparty(id) void
+        + createCounterparty(data): Counterparty
+        + getCounterparty(id): Counterparty
+        + getAllCounterparties(): Counterparty[]
+        + updateCounterparty(id, data): Counterparty
+        + deleteCounterparty(id): void
     }
     
     class DocumentService {
-        -WarehouseService warehouseService
-        +createDocument(data) Document
-        +getDocument(id) Document
-        +getAllDocuments(filters) Document[]
-        +confirmDocument(id) Document
-        +cancelDocument(id) Document
+        - warehouseService: WarehouseService
+        + createDocument(data): Document
+        + getDocument(id): Document
+        + getAllDocuments(filters): Document[]
+        + confirmDocument(id): Document
+        + cancelDocument(id): Document
     }
     
     class WarehouseService {
-        -ProductService productService
-        +recordMovement(productId, type, quantity, documentNumber) WarehouseMovement
-        +getMovements(limit) WarehouseMovement[]
-        +getMovementsByProduct(productId) WarehouseMovement[]
-        +getWarehouseStatus() object
+        - productService: ProductService
+        + recordMovement(productId, type, quantity, documentNumber): WarehouseMovement
+        + getMovements(limit): WarehouseMovement[]
+        + getMovementsByProduct(productId): WarehouseMovement[]
+        + getWarehouseStatus(): Object
     }
     
     class NotificationService {
-        -StockAlertSubject alertSubject
-        +sendStockAlert(productId, productName, currentStock, minStock) void
-        +checkAndNotifyLowStock(productId) void
-        +getNotificationManager() NotificationManager
-        +getAllAlerts() StockAlert[]
+        - alertSubject: StockAlertSubject
+        + sendStockAlert(productId, productName, currentStock, minStock): void
+        + checkAndNotifyLowStock(productId): void
+        + getNotificationManager(): NotificationManager
+        + getAllAlerts(): StockAlert[]
     }
-    
-    Product "*" o-- "0..1" Supplier : supplierId
-    Supplier "*" o-- "0..1" Counterparty : counterpartyId
-    Document "1" *-- "*" DocumentItem : композиція
-    Document "*" --> "0..1" Supplier : supplierId
-    Document "*" --> "0..1" Counterparty : counterpartyId
-    Document "*" --> "0..1" User : createdBy
-    DocumentItem "*" --> "1" Product : productId
-    Product "1" --> "*" WarehouseMovement : productId
-    Product "1" --> "*" StockAlert : productId
-    Document "1" --> "*" WarehouseMovement : documentNumber
-    
-    ProductService --> Product : управляє
-    ProductService --> NotificationService : використовує
-    SupplierService --> Supplier : управляє
-    SupplierService --> Counterparty : використовує
-    CounterpartyService --> Counterparty : управляє
-    DocumentService --> Document : управляє
-    DocumentService --> WarehouseService : використовує
-    WarehouseService --> WarehouseMovement : створює
-    WarehouseService --> ProductService : використовує
-    NotificationService --> StockAlert : створює
+}
+
+' Relationships between entities
+Product "0..*" o-- "0..1" Supplier : supplierId
+Supplier "0..*" o-- "0..1" Counterparty : counterpartyId
+Document "1" *-- "1..*" DocumentItem : композиція
+Document "0..*" --> "0..1" Supplier : supplierId
+Document "0..*" --> "0..1" Counterparty : counterpartyId
+Document "0..*" --> "0..1" User : createdBy
+DocumentItem "1..*" --> "1" Product : productId
+Product "1" --> "0..*" WarehouseMovement : productId
+Product "1" --> "0..*" StockAlert : productId
+Document "1" --> "0..*" WarehouseMovement : documentNumber
+
+' Relationships between services and entities
+ProductService ..> Product : manages
+ProductService ..> NotificationService : uses
+SupplierService ..> Supplier : manages
+SupplierService ..> Counterparty : uses
+CounterpartyService ..> Counterparty : manages
+DocumentService ..> Document : manages
+DocumentService ..> DocumentItem : manages
+DocumentService ..> WarehouseService : uses
+WarehouseService ..> WarehouseMovement : creates
+WarehouseService ..> ProductService : uses
+NotificationService ..> StockAlert : creates
+
+@enduml
 ```
 
 ## 📝 Примітки
