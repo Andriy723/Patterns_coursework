@@ -328,70 +328,69 @@ Patterns_coursework/
 
 ### Use Cases Діаграма
 
-```mermaid
-graph TB
-    User[👤 Користувач]
-    Admin[👨‍💼 Адміністратор]
-    SuperAdmin[👑 Супер Адміністратор]
+```plantuml
+@startuml
+
+left to right direction
+
+actor "👤 Користувач" as User
+actor "👨‍💼 Адміністратор" as Admin
+actor "👑 Супер Адміністратор" as SuperAdmin
+
+rectangle "Система складського обліку" {
+    usecase "Перегляд товарів" as UC1
+    usecase "Перегляд залишків складу" as UC2
+    usecase "Управління товарами" as UC3
+    usecase "Управління рухом товарів" as UC4
+    usecase "Створення накладних та актів" as UC5
+    usecase "Управління постачальниками" as UC6
+    usecase "Управління контрагентами" as UC7
+    usecase "Генерація звітів" as UC8
+    usecase "Управління користувачами" as UC9
+    usecase "Управління адміністраторами" as UC10
     
-    subgraph System["Система складського обліку"]
-        direction TB
-        UC1(Перегляд товарів)
-        UC2(Перегляд залишків складу)
-        UC3(Управління товарами)
-        UC4(Управління рухом товарів)
-        UC5(Створення накладних та актів)
-        UC6(Управління постачальниками)
-        UC7(Управління контрагентами)
-        UC8(Генерація звітів)
-        UC9(Управління користувачами)
-        UC10(Управління адміністраторами)
-        
-        INC1(Автентифікуватися)
-        
-        EXT1(Згенерувати номер документа)
-        EXT2(Сповістити про низький запас)
-    end
+    usecase "Автентифікуватися" as INC1
     
-    User --> UC1
-    User --> UC2
-    
-    Admin --> UC1
-    Admin --> UC2
-    Admin --> UC3
-    Admin --> UC4
-    Admin --> UC5
-    
-    SuperAdmin --> UC3
-    SuperAdmin --> UC4
-    SuperAdmin --> UC5
-    SuperAdmin --> UC6
-    SuperAdmin --> UC7
-    SuperAdmin --> UC8
-    SuperAdmin --> UC9
-    SuperAdmin --> UC10
-    
-    UC1 -.->|include| INC1
-    UC2 -.->|include| INC1
-    UC3 -.->|include| INC1
-    UC4 -.->|include| INC1
-    UC5 -.->|include| INC1
-    UC6 -.->|include| INC1
-    UC7 -.->|include| INC1
-    UC8 -.->|include| INC1
-    UC9 -.->|include| INC1
-    UC10 -.->|include| INC1
-    
-    UC3 -.->|extend| UC1
-    UC4 -.->|extend| UC1
-    UC5 -.->|extend| UC1
-    EXT1 -.->|extend| UC5
-    EXT2 -.->|extend| UC1
-    
-    style System fill:#f9fafb,stroke:#374151,stroke-width:3px
-    style User fill:#e1f5ff,stroke:#0369a1,stroke-width:2px
-    style Admin fill:#fff4e1,stroke:#d97706,stroke-width:2px
-    style SuperAdmin fill:#ffe1e1,stroke:#dc2626,stroke-width:2px
+    usecase "Згенерувати номер документа" as EXT1
+    usecase "Сповістити про низький запас" as EXT2
+}
+
+User --> UC1
+User --> UC2
+
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+
+SuperAdmin --> UC3
+SuperAdmin --> UC4
+SuperAdmin --> UC5
+SuperAdmin --> UC6
+SuperAdmin --> UC7
+SuperAdmin --> UC8
+SuperAdmin --> UC9
+SuperAdmin --> UC10
+
+UC1 ..> INC1 : <<include>>
+UC2 ..> INC1 : <<include>>
+UC3 ..> INC1 : <<include>>
+UC4 ..> INC1 : <<include>>
+UC5 ..> INC1 : <<include>>
+UC6 ..> INC1 : <<include>>
+UC7 ..> INC1 : <<include>>
+UC8 ..> INC1 : <<include>>
+UC9 ..> INC1 : <<include>>
+UC10 ..> INC1 : <<include>>
+
+UC3 ..> UC1 : <<extend>>
+UC4 ..> UC1 : <<extend>>
+UC5 ..> UC1 : <<extend>>
+EXT1 ..> UC5 : <<extend>>
+EXT2 ..> UC1 : <<extend>>
+
+@enduml
 ```
 
 ### UML Діаграма класів
