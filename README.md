@@ -413,6 +413,7 @@ class Product {
     + checkLowStock(): Boolean
     + calculateTotalValue(): Number
     + isAvailable(requiredQuantity: Number): Boolean
+    # validateQuantity(amount: Number): Boolean
 }
 
 class Supplier {
@@ -426,6 +427,7 @@ class Supplier {
     - updatedAt: Date
     + getFullInfo(): String
     + updateContactInfo(phone, email, address): void
+    # validateEmail(email: String): Boolean
 }
 
 class Counterparty {
@@ -440,6 +442,7 @@ class Counterparty {
     - updatedAt: Date
     + getFullInfo(): String
     + validateTaxId(): Boolean
+    # formatTaxId(): String
 }
 
 class Document {
@@ -460,6 +463,8 @@ class Document {
     + addItem(item: DocumentItem): void
     + removeItem(itemId: String): void
     + isConfirmed(): Boolean
+    # validateStatus(): Boolean
+    # updateTotalAmount(): void
 }
 
 class DocumentItem {
@@ -474,6 +479,7 @@ class DocumentItem {
     + calculateTotal(): Number
     + updateQuantity(quantity: Number): void
     + updatePrice(price: Number): void
+    # validateQuantity(): Boolean
 }
 
 class WarehouseMovement {
@@ -487,6 +493,7 @@ class WarehouseMovement {
     - createdAt: Date
     + execute(): void
     + getMovementType(): String
+    # validateMovement(): Boolean
 }
 
 class StockAlert {
@@ -497,6 +504,7 @@ class StockAlert {
     - createdAt: Date
     + markAsRead(): void
     + isUnread(): Boolean
+    # generateMessage(): String
 }
 
 class User {
@@ -512,6 +520,8 @@ class User {
     + hasPermission(action: String): Boolean
     + isAdmin(): Boolean
     + isSuperAdmin(): Boolean
+    # hashPassword(password: String): String
+    # validateRole(): Boolean
 }
 
 ' Relationships between entities
